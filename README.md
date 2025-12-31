@@ -155,8 +155,6 @@ Utilisez le token dans le header : `Authorization: Bearer <token>`
 - `PUT /api/grades/{id}` - Modifier une note
 - `DELETE /api/grades/{id}` - Supprimer une note
 
-Pour plus de détails, consultez [`API-DOCUMENTATION.md`](API-DOCUMENTATION.md).
-
 ## Mini SPA (Single Page Applications)
 
 Deux applications SPA sont disponibles pour Formateurs et Étudiants :
@@ -172,8 +170,6 @@ Deux applications SPA sont disponibles pour Formateurs et Étudiants :
 - Authentification JWT
 - Consultation des cours, notes et emploi du temps
 - Inscription/désinscription aux cours
-
-Pour plus de détails, consultez [`SPA-GUIDE.md`](SPA-GUIDE.md).
 
 ## Structure du projet
 
@@ -243,16 +239,6 @@ Le fichier JAR sera généré dans `target/gestion-formation-1.0.0.jar`
 - ✅ Authentification JWT pour les API REST
 - ✅ Gestion des groupes et spécialités avancée (formateur peut voir les groupes, création automatique de spécialités)
 - ✅ Upload et téléchargement de fichiers pour les cours
-
-## 📚 Guides et Documentation
-
-- **[GUIDES_UTILISATION.md](GUIDES_UTILISATION.md)** - Guide principal avec tous les liens
-- **[GUIDE_DEPLOIEMENT_PRODUCTION.md](GUIDE_DEPLOIEMENT_PRODUCTION.md)** - Guide de déploiement en production
-- **[TEST_VALIDATION.md](TEST_VALIDATION.md)** - Guide de test des validations
-- **[TEST_CORS.md](TEST_CORS.md)** - Guide de test CORS
-- **[TEST_CSRF.md](TEST_CSRF.md)** - Guide de test CSRF
-- **[ANALYSE_PROJET.md](ANALYSE_PROJET.md)** - Analyse complète du projet
-- **[CORRECTIONS_APPLIQUEES.md](CORRECTIONS_APPLIQUEES.md)** - Détails des corrections appliquées
 
 ## 🔐 Configuration des Variables d'Environnement
 
