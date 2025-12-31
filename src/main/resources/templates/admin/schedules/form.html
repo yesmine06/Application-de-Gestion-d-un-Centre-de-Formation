@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier Séance - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="bi bi-mortarboard"></i> Gestion Formation
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/admin/schedules">Retour</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>Modifier Séance</h1>
+
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Cours:</strong> <span th:text="${course.titre}"></span> 
+                    (<span th:text="${course.code}"></span>)
+                </div>
+                <div class="mb-3">
+                    <strong>Formateur:</strong> 
+                    <span th:text="${course.formateur.nom + ' ' + course.formateur.prenom}"></span>
+                </div>
+
+                <form th:action="@{/admin/schedules/{id}(id=${schedule.id})}" 
+                      th:object="${schedule}" method="post">
+                    
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="date" th:field="*{date}" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="heureDebut" class="form-label">Heure de début <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="heureDebut" th:field="*{heureDebut}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="heureFin" class="form-label">Heure de fin <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="heureFin" th:field="*{heureFin}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="salle" class="form-label">Salle</label>
+                        <input type="text" class="form-control" id="salle" th:field="*{salle}" placeholder="Ex: A101, B205...">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Statut <span class="text-danger">*</span></label>
+                        <select class="form-select" id="status" th:field="*{status}" required>
+                            <option value="PENDING">En attente</option>
+                            <option value="APPROVED">Approuvé</option>
+                            <option value="REJECTED">Rejeté</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            Note: Si vous approuvez une séance, les étudiants seront notifiés par email.
+                        </small>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Enregistrer
+                        </button>
+                        <a href="/admin/schedules" class="btn btn-secondary">
+                            <i class="bi bi-x-circle me-2"></i>Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

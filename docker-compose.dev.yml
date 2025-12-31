@@ -1,0 +1,62 @@
+# Configuration Docker Compose pour le développement avec hot reload
+# Note: La version '3.8' est obsolète dans Docker Compose v2, elle a été supprimée
+# Utilisez cette configuration pour avoir un rechargement automatique du code
+# Usage: docker compose -f docker-compose.dev.yml up
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: formation-mysql-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: formation_db
+      MYSQL_USER: formation_user
+      MYSQL_PASSWORD: formation_password
+    ports:
+      - "3308:3306"  # Port externe 3308 pour éviter le conflit avec XAMPP (3307) ou autres services MySQL
+    volumes:
+      - mysql-dev-data:/var/lib/mysql
+      # Note: init.sql n'est pas nécessaire car la base est créée automatiquement via MYSQL_DATABASE
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: formation-app-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/formation_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: formation_user
+      SPRING_DATASOURCE_PASSWORD: formation_password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # Active le hot reload de Spring Boot DevTools
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+    volumes:
+      # Monte le code source pour permettre le hot reload
+      - ./src:/app/src:ro
+      - ./target:/app/target
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - formation-network-dev
+
+volumes:
+  mysql-dev-data:
+    driver: local
+
+networks:
+  formation-network-dev:
+    driver: bridge
+

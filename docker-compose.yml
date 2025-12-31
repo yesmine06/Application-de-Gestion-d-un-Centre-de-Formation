@@ -1,0 +1,54 @@
+# version: '3.8' # Déprécié dans Docker Compose v2
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: formation-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: formation_db
+      MYSQL_USER: formation_user
+      MYSQL_PASSWORD: formation_password
+    ports:
+      - "3308:3306"  # Port externe 3308 pour éviter le conflit avec XAMPP (3307) ou autres services MySQL
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # Note: init.sql n'est pas nécessaire car la base est créée automatiquement via MYSQL_DATABASE
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: formation-app
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/formation_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: formation_user
+      SPRING_DATASOURCE_PASSWORD: formation_password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - formation-network
+
+volumes:
+  mysql-data:
+    driver: local
+
+networks:
+  formation-network:
+    driver: bridge
+
+# Note: Keep pom.xml in .dockerignore but ensure it's copied in Dockerfile

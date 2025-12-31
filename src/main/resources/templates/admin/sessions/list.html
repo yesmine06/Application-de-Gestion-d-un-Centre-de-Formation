@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sessions - Gestion Formation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-mortarboard"></i> Gestion Formation
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/admin/dashboard">Dashboard</a>
+                <a class="nav-link" href="/logout">Déconnexion</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-calendar3"></i> Gestion des Sessions</h1>
+            <a href="/admin/sessions/new" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nouvelle session
+            </a>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="card">
+            <div class="card-header text-white" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333;">
+                <h5 class="mb-0"><i class="bi bi-calendar3-fill me-2"></i>Liste des Sessions</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Date de début</th>
+                            <th>Date de fin</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${sessions == null or sessions.isEmpty()}">
+                            <td colspan="5" class="text-center text-muted">Aucune session trouvée</td>
+                        </tr>
+                        <tr th:each="session : ${sessions}" th:if="${sessions != null and !sessions.isEmpty()}">
+                            <td th:text="${session.nom}"></td>
+                            <td th:text="${session.dateDebut != null ? #temporals.format(session.dateDebut, 'dd/MM/yyyy') : '-'}"></td>
+                            <td th:text="${session.dateFin != null ? #temporals.format(session.dateFin, 'dd/MM/yyyy') : '-'}"></td>
+                            <td>
+                                <span th:if="${session.type != null}" th:switch="${session.type.name()}">
+                                    <span th:case="'SEMESTRE'" class="badge bg-info">Semestre</span>
+                                    <span th:case="'ANNEE_SCOLAIRE'" class="badge bg-primary">Année scolaire</span>
+                                    <span th:case="*" class="text-muted">-</span>
+                                </span>
+                                <span th:if="${session.type == null}" class="text-muted">-</span>
+                            </td>
+                            <td>
+                                <a th:href="@{/admin/sessions/{id}/edit(id=${session.id})}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a th:href="@{/admin/sessions/{id}/delete(id=${session.id})}" 
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette session?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

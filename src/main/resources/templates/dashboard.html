@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Gestion Formation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .dashboard-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        .dashboard-card .card-body {
+            padding: 2rem;
+        }
+        .dashboard-card .icon-wrapper {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .dashboard-card .icon-wrapper i {
+            font-size: 2rem;
+        }
+        .dashboard-card.card-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .dashboard-card.card-success {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .dashboard-card.card-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .dashboard-card .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .dashboard-card .card-text {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        .dashboard-card .btn {
+            border-radius: 8px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .dashboard-card .btn:hover {
+            transform: scale(1.05);
+        }
+        .welcome-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .welcome-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .welcome-section p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        .page-header h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        .page-header p {
+            color: #6c757d;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="/dashboard">
+                <i class="bi bi-mortarboard me-2"></i>Gestion Formation
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/logout">
+                    <i class="bi bi-box-arrow-right me-1"></i>Déconnexion
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        <div class="welcome-section">
+            <h1><i class="bi bi-speedometer2 me-2"></i>Tableau de bord</h1>
+            <p>Bienvenue dans votre espace de gestion de formation</p>
+        </div>
+
+        <div class="page-header">
+            <h2>Gestion</h2>
+            <p>Accédez rapidement aux différentes sections de l'application</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card dashboard-card card-primary text-white">
+                    <div class="card-body">
+                        <div class="icon-wrapper">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h5 class="card-title">Étudiants</h5>
+                        <p class="card-text">Gérez les inscriptions, les profils et les informations des étudiants</p>
+                        <a href="/admin/students" class="btn btn-light btn-lg" sec:authorize="hasRole('ADMIN')">
+                            <i class="bi bi-arrow-right-circle me-2"></i>Gérer
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card dashboard-card card-success text-white">
+                    <div class="card-body">
+                        <div class="icon-wrapper">
+                            <i class="bi bi-person-badge-fill"></i>
+                        </div>
+                        <h5 class="card-title">Formateurs</h5>
+                        <p class="card-text">Administrez les formateurs et leurs spécialités</p>
+                        <a href="/admin/trainers" class="btn btn-light btn-lg" sec:authorize="hasRole('ADMIN')">
+                            <i class="bi bi-arrow-right-circle me-2"></i>Gérer
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card dashboard-card card-info text-white">
+                    <div class="card-body">
+                        <div class="icon-wrapper">
+                            <i class="bi bi-book-fill"></i>
+                        </div>
+                        <h5 class="card-title">Cours</h5>
+                        <p class="card-text">Créez et organisez les cours et les sessions de formation</p>
+                        <a href="/admin/courses" class="btn btn-light btn-lg" sec:authorize="hasRole('ADMIN')">
+                            <i class="bi bi-arrow-right-circle me-2"></i>Gérer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+

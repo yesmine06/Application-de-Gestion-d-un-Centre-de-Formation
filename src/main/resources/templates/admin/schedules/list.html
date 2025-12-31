@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Séances - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="bi bi-mortarboard"></i> Gestion Formation
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/admin/dashboard">Dashboard</a>
+                <a class="nav-link active" href="/admin/schedules">Séances</a>
+                <a class="nav-link" href="/logout">Déconnexion</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-calendar-check"></i> Gestion des Séances</h1>
+            <span th:if="${pendingSchedules != null and !pendingSchedules.isEmpty()}" 
+                  class="badge bg-warning text-dark fs-6">
+                <i class="bi bi-clock-history me-1"></i>
+                <span th:text="${pendingSchedules.size()} + ' séance(s) en attente'"></span>
+            </span>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Séances en attente de validation -->
+        <div th:if="${pendingSchedules != null and !pendingSchedules.isEmpty()}" class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Séances en attente de validation</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Cours</th>
+                            <th>Formateur</th>
+                            <th>Date</th>
+                            <th>Heure</th>
+                            <th>Salle</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="schedule : ${pendingSchedules}">
+                            <td>
+                                <strong th:text="${schedule.cours.titre}"></strong><br>
+                                <small class="text-muted" th:text="${schedule.cours.code}"></small>
+                            </td>
+                            <td th:text="${schedule.cours.formateur.nom + ' ' + schedule.cours.formateur.prenom}"></td>
+                            <td th:text="${#temporals.format(schedule.date, 'dd/MM/yyyy')}"></td>
+                            <td>
+                                <span th:text="${#temporals.format(schedule.heureDebut, 'HH:mm')} + ' - ' + ${#temporals.format(schedule.heureFin, 'HH:mm')}"></span>
+                            </td>
+                            <td th:text="${schedule.salle != null ? schedule.salle : '-'}"></td>
+                            <td>
+                                <form th:action="@{/admin/schedules/{id}/approve(id=${schedule.id})}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="bi bi-check-circle"></i> Approuver
+                                    </button>
+                                </form>
+                                <form th:action="@{/admin/schedules/{id}/reject(id=${schedule.id})}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-x-circle"></i> Rejeter
+                                    </button>
+                                </form>
+                                <a th:href="@{/admin/schedules/{id}/edit(id=${schedule.id})}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Conflits d'horaires -->
+        <div th:if="${conflicts != null and !conflicts.isEmpty()}" class="card mb-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Conflits d'horaires détectés</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Les séances suivantes ont des horaires qui se chevauchent pour des formateurs différents.
+                </div>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Cours</th>
+                            <th>Formateur</th>
+                            <th>Date</th>
+                            <th>Heure</th>
+                            <th>Salle</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="schedule : ${conflicts}">
+                            <td>
+                                <strong th:text="${schedule.cours.titre}"></strong><br>
+                                <small class="text-muted" th:text="${schedule.cours.code}"></small>
+                            </td>
+                            <td th:text="${schedule.cours.formateur.nom + ' ' + schedule.cours.formateur.prenom}"></td>
+                            <td th:text="${#temporals.format(schedule.date, 'dd/MM/yyyy')}"></td>
+                            <td>
+                                <span th:text="${#temporals.format(schedule.heureDebut, 'HH:mm')} + ' - ' + ${#temporals.format(schedule.heureFin, 'HH:mm')}"></span>
+                            </td>
+                            <td th:text="${schedule.salle != null ? schedule.salle : '-'}"></td>
+                            <td>
+                                <a th:href="@{/admin/schedules/{id}/edit(id=${schedule.id})}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i> Modifier
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Toutes les séances -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Toutes les séances</h5>
+            </div>
+            <div class="card-body">
+                <div th:if="${schedules != null and !schedules.isEmpty()}">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Cours</th>
+                                <th>Formateur</th>
+                                <th>Date</th>
+                                <th>Heure</th>
+                                <th>Salle</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="schedule : ${schedules}">
+                                <td>
+                                    <strong th:text="${schedule.cours.titre}"></strong><br>
+                                    <small class="text-muted" th:text="${schedule.cours.code}"></small>
+                                </td>
+                                <td th:text="${schedule.cours.formateur.nom + ' ' + schedule.cours.formateur.prenom}"></td>
+                                <td th:text="${#temporals.format(schedule.date, 'dd/MM/yyyy')}"></td>
+                                <td>
+                                    <span th:text="${#temporals.format(schedule.heureDebut, 'HH:mm')} + ' - ' + ${#temporals.format(schedule.heureFin, 'HH:mm')}"></span>
+                                </td>
+                                <td th:text="${schedule.salle != null ? schedule.salle : '-'}"></td>
+                                <td>
+                                    <span th:switch="${schedule.status != null ? schedule.status.toString() : ''}">
+                                        <span th:case="'PENDING'" class="badge bg-warning">En attente</span>
+                                        <span th:case="'APPROVED'" class="badge bg-success">Approuvé</span>
+                                        <span th:case="'REJECTED'" class="badge bg-danger">Rejeté</span>
+                                    </span>
+                                </td>
+                                <td>
+                                    <!-- Boutons d'approbation/rejet pour les séances en attente -->
+                                    <span th:if="${schedule.status != null and schedule.status.toString() == 'PENDING'}">
+                                        <form th:action="@{/admin/schedules/{id}/approve(id=${schedule.id})}" method="post" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success" title="Approuver la séance">
+                                                <i class="bi bi-check-circle"></i> Approuver
+                                            </button>
+                                        </form>
+                                        <form th:action="@{/admin/schedules/{id}/reject(id=${schedule.id})}" method="post" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Rejeter la séance"
+                                                    onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette séance?')">
+                                                <i class="bi bi-x-circle"></i> Rejeter
+                                            </button>
+                                        </form>
+                                    </span>
+                                    <!-- Bouton pour réapprouver une séance rejetée -->
+                                    <span th:if="${schedule.status != null and schedule.status.toString() == 'REJECTED'}">
+                                        <form th:action="@{/admin/schedules/{id}/approve(id=${schedule.id})}" method="post" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success" title="Approuver la séance">
+                                                <i class="bi bi-check-circle"></i> Approuver
+                                            </button>
+                                        </form>
+                                    </span>
+                                    <a th:href="@{/admin/schedules/{id}/edit(id=${schedule.id})}" class="btn btn-sm btn-warning" title="Modifier">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form th:action="@{/admin/schedules/{id}/delete(id=${schedule.id})}" method="post" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Supprimer"
+                                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette séance?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${schedules == null or schedules.isEmpty()}" class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Aucune séance planifiée.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

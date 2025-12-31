@@ -1,0 +1,24 @@
+# Dockerfile pour le développement avec hot reload
+# Utilise Maven pour compiler et Spring Boot DevTools pour le hot reload
+
+FROM maven:3.9-eclipse-temurin-17
+
+WORKDIR /app
+
+# Installer les dépendances Maven (mise en cache)
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copier le code source
+COPY ./src ./src
+
+# Compiler l'application
+RUN mvn clean package -B -DskipTests
+
+# Exposer le port
+EXPOSE 8080
+
+# Lancer l'application avec Spring Boot DevTools activé
+# Le hot reload fonctionnera grâce au volume monté dans docker-compose.dev.yml
+CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.profiles=dev"]
+
