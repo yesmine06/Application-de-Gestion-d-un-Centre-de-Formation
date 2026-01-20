@@ -182,6 +182,58 @@ public class EmailService {
             // On ne propage pas l'exception pour ne pas bloquer la planification
         }
     }
+    
+    /**
+     * Envoie les coordonnées de connexion à un nouvel utilisateur créé par l'admin
+     */
+    public void sendAccountCredentials(String to, String fullName, String username, String password, String userType) {
+        try {
+            String userTypeLabel = "ETUDIANT".equals(userType) ? "Étudiant" : "FORMATEUR".equals(userType) ? "Formateur" : "Utilisateur";
+            
+            if (mailSender == null) {
+                // Mock service - log détaillé
+                logger.info("=== MOCK EMAIL SERVICE (JavaMailSender non configuré) ===");
+                logger.info("📧 Envoi des coordonnées de connexion");
+                logger.info("   Destinataire: {}", to);
+                logger.info("   Nom complet: {}", fullName);
+                logger.info("   Type d'utilisateur: {}", userTypeLabel);
+                logger.info("   Nom d'utilisateur: {}", username);
+                logger.info("   Mot de passe: {}", password);
+                logger.info("   Sujet: Vos coordonnées de connexion - Gestion Formation");
+                logger.info("=========================================================");
+                return;
+            }
+            
+            SimpleMailMessage message = new SimpleMailMessage();
+            if (fromEmail != null && !fromEmail.isEmpty()) {
+                message.setFrom(fromEmail);
+            }
+            message.setTo(to);
+            message.setSubject("Vos coordonnées de connexion - Gestion Formation");
+            
+            String emailBody = String.format(
+                "Bonjour %s,\n\n" +
+                "Votre compte %s a été créé avec succès sur la plateforme de Gestion Formation.\n\n" +
+                "Voici vos coordonnées de connexion :\n" +
+                "- Nom d'utilisateur : %s\n" +
+                "- Mot de passe : %s\n\n" +
+                "⚠️ IMPORTANT : Pour des raisons de sécurité, veuillez changer votre mot de passe après votre première connexion.\n\n" +
+                "Vous pouvez vous connecter à l'adresse suivante :\n" +
+                "http://localhost:8080/login\n\n" +
+                "Cordialement,\n" +
+                "L'équipe de gestion",
+                fullName, userTypeLabel, username, password
+            );
+            
+            message.setText(emailBody);
+            
+            mailSender.send(message);
+            logger.info("✅ Email de coordonnées de connexion envoyé avec succès à: {} (username: {})", to, username);
+        } catch (Exception e) {
+            logger.error("❌ Erreur lors de l'envoi de l'email de coordonnées de connexion à {}: {}", to, e.getMessage(), e);
+            // On ne propage pas l'exception pour ne pas bloquer la création du compte
+        }
+    }
 }
 
 

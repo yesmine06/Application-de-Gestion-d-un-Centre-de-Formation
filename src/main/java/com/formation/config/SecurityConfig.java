@@ -71,7 +71,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
                 // Pages publiques
-                .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**", "/spa/**", "/favicon.ico").permitAll()
+                .requestMatchers("/", "/login", "/css/**", "/js/**", "/images/**", "/spa/**", "/react/**", "/favicon.ico").permitAll()
                 // Logout doit être accessible (géré par Spring Security)
                 .requestMatchers("/logout").permitAll()
                 // API d'authentification publique

@@ -26,26 +26,9 @@ public class EtudiantDashboardController {
     }
     
     @GetMapping("/dashboard")
-    public String etudiantDashboard(Model model, Authentication authentication) {
-        try {
-            Student student = etudiantService.getCurrentStudent(authentication.getName());
-            long coursesCount = etudiantService.getStudentCourses(student.getId()).size();
-            long gradesCount = etudiantService.getStudentGrades(student.getId()).size();
-            
-            // Calculer la moyenne générale
-            List<Grade> grades = etudiantService.getStudentGrades(student.getId());
-            double average = GradeService.calculateAverage(grades);
-            
-            model.addAttribute("student", student);
-            model.addAttribute("coursesCount", coursesCount);
-            model.addAttribute("gradesCount", gradesCount);
-            model.addAttribute("average", average);
-            
-            return "etudiant/dashboard";
-        } catch (Exception e) {
-            model.addAttribute("error", "Erreur: " + e.getMessage());
-            return "etudiant/dashboard";
-        }
+    public String etudiantDashboard() {
+        // Rediriger vers l'interface React
+        return "redirect:/react/etudiant/index.html";
     }
 }
 

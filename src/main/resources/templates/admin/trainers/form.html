@@ -17,9 +17,42 @@
     </nav>
 
     <div class="container mt-4">
-        <h1 th:text="${trainer.id != null} ? 'Modifier Formateur' : 'Nouveau Formateur'"></h1>
+        <h1 th:text="${trainer != null && trainer.id != null} ? 'Modifier Formateur' : 'Nouveau Formateur'"></h1>
 
-        <form th:action="${trainer.id != null ? '/admin/trainers/' + trainer.id : '/admin/trainers'}" 
+        <!-- Formulaire de création avec RegistrationDto -->
+        <form th:if="${registrationDto != null}" 
+              th:action="@{/admin/trainers}" 
+              th:object="${registrationDto}" method="post" class="card p-4">
+            <div class="mb-3">
+                <label for="nom" class="form-label">Nom</label>
+                <input type="text" class="form-control" id="nom" th:field="*{nom}" required>
+            </div>
+            <div class="mb-3">
+                <label for="prenom" class="form-label">Prénom</label>
+                <input type="text" class="form-control" id="prenom" th:field="*{prenom}" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" th:field="*{email}" required>
+            </div>
+            <div class="mb-3">
+                <label for="specialite" class="form-label">Spécialité</label>
+                <input type="text" class="form-control" id="specialite" th:field="*{specialite}" required>
+            </div>
+            <div class="mb-3">
+                <label for="username" class="form-label">Nom d'utilisateur</label>
+                <input type="text" class="form-control" id="username" th:field="*{username}" required>
+            </div>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Un mot de passe sécurisé sera généré automatiquement et envoyé par email au formateur.
+            </div>
+            <button type="submit" class="btn btn-primary">Créer le formateur</button>
+            <a href="/admin/trainers" class="btn btn-secondary">Annuler</a>
+        </form>
+
+        <!-- Formulaire de modification avec Trainer -->
+        <form th:if="${trainer != null && trainer.id != null}" 
+              th:action="@{/admin/trainers/{id}(id=${trainer.id})}" 
               th:object="${trainer}" method="post" class="card p-4">
             <div class="mb-3">
                 <label for="nom" class="form-label">Nom</label>

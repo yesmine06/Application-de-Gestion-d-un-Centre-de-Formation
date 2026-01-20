@@ -12,11 +12,11 @@ public class RegistrationDto {
     @Size(min = 3, max = 50, message = "Le nom d'utilisateur doit contenir entre 3 et 50 caractères")
     private String username;
     
-    @NotBlank(message = "Le mot de passe est requis")
+    // Mot de passe optionnel pour la création par l'admin (sera généré automatiquement si vide)
+    // Pour l'inscription publique, la validation manuelle dans RegistrationService vérifiera qu'il est fourni
     @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
     private String password;
     
-    @NotBlank(message = "La confirmation du mot de passe est requise")
     private String confirmPassword;
     
     @NotBlank(message = "L'email est requis")

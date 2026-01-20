@@ -106,9 +106,61 @@ L'application sera accessible sur `http://localhost:8080`
 - Username: `formateur1`
 - Password: `password`
 
+## Configuration SMTP (Envoi d'emails)
+
+L'application envoie automatiquement les coordonnées de connexion aux nouveaux utilisateurs créés par l'admin.
+
+### Configuration rapide
+
+**Méthode 1 : Variables d'environnement (Recommandé)**
+
+```bash
+# Linux/Mac
+export SPRING_MAIL_HOST=smtp.gmail.com
+export SPRING_MAIL_PORT=587
+export SPRING_MAIL_USERNAME=votre_email@gmail.com
+export SPRING_MAIL_PASSWORD=votre_mot_de_passe_application
+
+# Windows PowerShell
+$env:SPRING_MAIL_HOST="smtp.gmail.com"
+$env:SPRING_MAIL_PORT="587"
+$env:SPRING_MAIL_USERNAME="votre_email@gmail.com"
+$env:SPRING_MAIL_PASSWORD="votre_mot_de_passe_application"
+```
+
+**Méthode 2 : Fichier de configuration**
+
+Modifiez `src/main/resources/application-prod.properties` :
+
+```properties
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=votre_email@gmail.com
+spring.mail.password=votre_mot_de_passe_application
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+```
+
+### Configuration Gmail
+
+Pour Gmail, vous devez :
+1. Activer l'authentification à 2 facteurs : https://myaccount.google.com/security
+2. Créer un mot de passe d'application : https://myaccount.google.com/apppasswords
+3. Utiliser le mot de passe d'application (16 caractères) au lieu de votre mot de passe normal
+
+### Mode Mock (Développement)
+
+En développement, si SMTP n'est pas configuré, les emails sont loggés dans la console. C'est normal et permet de tester sans configurer SMTP.
+
+### Documentation complète
+
+Pour plus de détails sur la configuration SMTP avec différents fournisseurs (Gmail, Outlook, OVH, SendGrid, etc.), consultez le fichier d'exemple : `src/main/resources/application-smtp-example.properties`.
+
 ## API REST
 
 Les endpoints REST sont disponibles sous `/api/` et sont **protégés par JWT**.
+
+> 📋 **Note :** Les interfaces React utilisent ces endpoints pour toutes les opérations. Tous les endpoints sont protégés par JWT et nécessitent une authentification.
 
 ### Authentification
 
@@ -151,26 +203,83 @@ Utilisez le token dans le header : `Authorization: Bearer <token>`
 #### Notes (`/api/grades`)
 - `GET /api/grades` - Liste des notes
 - `GET /api/grades/{id}` - Détails d'une note
-- `POST /api/grades` - Attribuer une note
-- `PUT /api/grades/{id}` - Modifier une note
-- `DELETE /api/grades/{id}` - Supprimer une note
+- `POST /api/grades/create` - Créer ou mettre à jour une note
+- `GET /api/grades/student/{studentId}` - Notes d'un étudiant
+- `GET /api/grades/course/{coursId}` - Notes d'un cours
+- `GET /api/grades/student/{studentId}/average` - Moyenne d'un étudiant
+- `GET /api/grades/course/{coursId}/success-rate` - Taux de réussite d'un cours
 
-## Mini SPA (Single Page Applications)
+#### Fichiers de Cours (`/api/course-files`)
+- `GET /api/course-files/course/{courseId}` - Liste des fichiers d'un cours
+- `POST /api/course-files/upload` - Upload un fichier (formateur/admin)
+- `GET /api/course-files/{fileId}/download` - Télécharger un fichier
+- `GET /api/course-files/{fileId}` - Détails d'un fichier
+- `DELETE /api/course-files/{fileId}` - Supprimer un fichier (formateur/admin)
 
-Deux applications SPA sont disponibles pour Formateurs et Étudiants :
+#### Planning (`/api/schedules`)
+- `GET /api/schedules` - Liste des séances (optionnellement filtrée par date)
+- `GET /api/schedules/{id}` - Détails d'une séance
+- `GET /api/schedules/student/{studentId}` - Séances d'un étudiant
+- `GET /api/schedules/trainer/{trainerId}` - Séances d'un formateur
+- `GET /api/schedules/course/{courseId}` - Séances d'un cours
+- `POST /api/schedules` - Créer une séance (formateur/admin)
+- `PUT /api/schedules/{id}` - Modifier une séance (formateur/admin)
+- `DELETE /api/schedules/{id}` - Supprimer une séance (formateur/admin)
+- `POST /api/schedules/{id}/approve` - Approuver une séance (admin)
+- `POST /api/schedules/{id}/reject` - Rejeter une séance (admin)
 
-### SPA Formateur
-- Accès : `http://localhost:8080/spa/formateur/index.html`
+#### Groupes (`/api/groups`)
+- `GET /api/groups` - Liste des groupes
+- `GET /api/groups/{id}` - Détails d'un groupe
+- `GET /api/groups/{id}/students` - Étudiants d'un groupe
+- `POST /api/groups` - Créer un groupe (admin)
+- `PUT /api/groups/{id}` - Modifier un groupe (admin)
+- `DELETE /api/groups/{id}` - Supprimer un groupe (admin)
+
+Pour plus de détails, consultez [`API-DOCUMENTATION.md`](API-DOCUMENTATION.md).
+
+## Interfaces React (Single Page Applications)
+
+Deux applications React sont disponibles pour Formateurs et Étudiants :
+
+### Interface Étudiant (React)
+- Accès : `http://localhost:8080/react/etudiant/index.html`
 - Authentification JWT
-- Gestion des cours et notes
-- Vue des étudiants par cours
+- **Fonctionnalités** :
+  - Consultation de mes cours
+  - Inscription/désinscription aux cours disponibles
+  - Consultation des notes et moyenne générale
+  - Emploi du temps par date
+- **Technologies** : React 18, Bootstrap 5, API REST
 
-### SPA Étudiant
-- Accès : `http://localhost:8080/spa/etudiant/index.html`
+### Interface Formateur (React)
+- Accès : `http://localhost:8080/react/formateur/index.html`
 - Authentification JWT
-- Consultation des cours, notes et emploi du temps
-- Inscription/désinscription aux cours
+- **Fonctionnalités** :
+  - Gestion de mes cours
+  - Vue des étudiants inscrits par cours
+  - Attribution et gestion des notes (avec filtrage des étudiants inscrits)
+  - Consultation des notes par cours
+  - **Gestion des fichiers** : Upload, téléchargement et suppression de fichiers pour chaque cours
+  - **Planification des séances** : Création, modification et suppression de séances planifiées
+- **Technologies** : React 18, Bootstrap 5, API REST
 
+### Interface d'Administration (Thymeleaf - SSR)
+- Accès : `http://localhost:8080/admin/dashboard`
+- Authentification par session
+- **Fonctionnalités** :
+  - Gestion complète des étudiants, formateurs, cours
+  - Gestion des sessions, spécialités, groupes
+  - Planification et validation des séances
+  - Statistiques et rapports PDF
+  - Création de comptes avec envoi automatique des coordonnées par email
+
+### Anciennes interfaces (JavaScript vanilla)
+Les anciennes interfaces en JavaScript vanilla sont toujours disponibles :
+- Étudiant : `http://localhost:8080/spa/etudiant/index.html`
+- Formateur : `http://localhost:8080/spa/formateur/index.html`
+
+> **Note :** Les interfaces Thymeleaf pour étudiants et formateurs ont été supprimées et remplacées par les interfaces React.
 ## Structure du projet
 
 ```
@@ -184,26 +293,35 @@ src/
 │   │   ├── entity/          # Entités JPA
 │   │   ├── repository/      # Repositories Spring Data JPA
 │   │   ├── service/         # Services métier
+│   │   ├── dto/            # Data Transfer Objects
 │   │   └── GestionFormationApplication.java
 │   └── resources/
-│       ├── templates/       # Templates Thymeleaf
+│       ├── templates/       # Templates Thymeleaf (admin uniquement)
+│       ├── static/         # Fichiers statiques
+│       │   └── react/      # Interfaces React (étudiant/formateur)
 │       └── application*.properties
-└── test/
+├── scripts/                # Scripts de sauvegarde SQL
+└── test/                   # Tests unitaires
 ```
 
 ## Technologies utilisées
 
+### Backend
 - **Spring Boot 3.2.0**
 - **Spring Data JPA** avec Hibernate
 - **Spring Security** avec JWT
-- **Thymeleaf** pour le SSR
-- **Bootstrap 5** pour l'interface
+- **Thymeleaf** pour le SSR (interface admin)
 - **MySQL** pour la base de données
 - **Maven** pour la gestion des dépendances
 - **JasperReports** pour la génération de PDF
 - **JWT (jjwt)** pour l'authentification API
-- **FullCalendar** pour le planning interactif
 - **Lombok** pour réduire le boilerplate
+
+### Frontend
+- **React 18** (via CDN) pour les interfaces étudiant/formateur
+- **Bootstrap 5** pour l'interface
+- **Babel** pour la transpilation JSX
+- **JavaScript vanilla** pour les anciennes interfaces SPA
 
 ## Développement
 
@@ -232,13 +350,37 @@ Le fichier JAR sera généré dans `target/gestion-formation-1.0.0.jar`
 
 - ✅ Génération de rapports PDF avec JasperReports
 - ✅ Statistiques et tableaux de bord
-- ✅ Notifications email (service mock disponible)
+- ✅ Notifications email automatiques (SMTP configurable)
 - ✅ Gestion complète du planning avec détection de conflits
-- ✅ Interface étudiant/formateur dédiée
-- ✅ FullCalendar pour la visualisation interactive du planning
+- ✅ Interfaces React complètes pour étudiants et formateurs
 - ✅ Authentification JWT pour les API REST
-- ✅ Gestion des groupes et spécialités avancée (formateur peut voir les groupes, création automatique de spécialités)
+- ✅ Gestion des groupes et spécialités avancée
 - ✅ Upload et téléchargement de fichiers pour les cours
+- ✅ Planification des séances par les formateurs
+- ✅ Création de comptes par l'administrateur uniquement (avec envoi automatique des coordonnées)
+- ✅ Scripts de sauvegarde de la base de données (PowerShell et Bash)
+
+## 📚 Guides et Documentation
+
+- **[DOCKER-GUIDE.md](DOCKER-GUIDE.md)** - Guide complet pour Docker (développement et production)
+- **[scripts/README-BACKUP.md](scripts/README-BACKUP.md)** - Guide de sauvegarde de la base de données
+- **[GUIDES_UTILISATION.md](GUIDES_UTILISATION.md)** - Guide principal avec tous les liens
+- **[GUIDE_DEPLOIEMENT_PRODUCTION.md](GUIDE_DEPLOIEMENT_PRODUCTION.md)** - Guide de déploiement en production
+- **[TEST_VALIDATION.md](TEST_VALIDATION.md)** - Guide de test des validations
+- **[TEST_CORS.md](TEST_CORS.md)** - Guide de test CORS
+- **[TEST_CSRF.md](TEST_CSRF.md)** - Guide de test CSRF
+- **[ANALYSE_PROJET.md](ANALYSE_PROJET.md)** - Analyse complète du projet
+- **[CORRECTIONS_APPLIQUEES.md](CORRECTIONS_APPLIQUEES.md)** - Détails des corrections appliquées
+
+## 💾 Sauvegarde de la Base de Données
+
+Des scripts de sauvegarde sont disponibles dans le dossier `scripts/` :
+
+- **`backup.ps1`** - Script PowerShell pour Windows
+- **`backup.sh`** - Script Bash pour Linux/Mac
+- **`backup-database.sql`** - Documentation et requêtes SQL
+
+Pour plus de détails, consultez [`scripts/README-BACKUP.md`](scripts/README-BACKUP.md).
 
 ## 🔐 Configuration des Variables d'Environnement
 

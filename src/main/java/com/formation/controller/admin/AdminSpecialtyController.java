@@ -9,6 +9,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin/specialties")
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
 public class AdminSpecialtyController extends BaseAdminController<Specialty, Long> {
     
     private final SpecialtyService specialtyService;

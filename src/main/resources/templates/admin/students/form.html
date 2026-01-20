@@ -17,9 +17,61 @@
     </nav>
 
     <div class="container mt-4">
-        <h1 th:text="${student.id != null} ? 'Modifier Étudiant' : 'Nouvel Étudiant'"></h1>
+        <h1 th:text="${student != null && student.id != null} ? 'Modifier Étudiant' : 'Nouvel Étudiant'"></h1>
 
-        <form th:action="${student.id != null ? '/admin/students/' + student.id : '/admin/students'}" 
+        <!-- Formulaire de création avec RegistrationDto -->
+        <form th:if="${registrationDto != null}" 
+              th:action="@{/admin/students}" 
+              th:object="${registrationDto}" method="post" class="card p-4">
+            <div class="mb-3">
+                <label for="matricule" class="form-label">Matricule</label>
+                <input type="text" class="form-control" id="matricule" th:field="*{matricule}">
+                <small class="form-text text-muted">Laisser vide pour générer automatiquement</small>
+            </div>
+            <div class="mb-3">
+                <label for="nom" class="form-label">Nom</label>
+                <input type="text" class="form-control" id="nom" th:field="*{nom}" required>
+            </div>
+            <div class="mb-3">
+                <label for="prenom" class="form-label">Prénom</label>
+                <input type="text" class="form-control" id="prenom" th:field="*{prenom}" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" th:field="*{email}" required>
+            </div>
+            <div class="mb-3">
+                <label for="username" class="form-label">Nom d'utilisateur</label>
+                <input type="text" class="form-control" id="username" th:field="*{username}" required>
+            </div>
+            <div class="mb-3">
+                <label for="specialtyId" class="form-label">Spécialité</label>
+                <select class="form-select" id="specialtyId" th:field="*{specialtyId}">
+                    <option value="">Sélectionner une spécialité</option>
+                    <option th:each="spec : ${specialties}" 
+                            th:value="${spec.id}" 
+                            th:text="${spec.nom}"></option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="groupId" class="form-label">Groupe</label>
+                <select class="form-select" id="groupId" th:field="*{groupId}">
+                    <option value="">Sélectionner un groupe</option>
+                    <option th:each="grp : ${groups}" 
+                            th:value="${grp.id}" 
+                            th:text="${grp.nom}"></option>
+                </select>
+            </div>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Un mot de passe sécurisé sera généré automatiquement et envoyé par email à l'utilisateur.
+            </div>
+            <button type="submit" class="btn btn-primary">Créer l'étudiant</button>
+            <a href="/admin/students" class="btn btn-secondary">Annuler</a>
+        </form>
+
+        <!-- Formulaire de modification avec Student -->
+        <form th:if="${student != null && student.id != null}" 
+              th:action="@{/admin/students/{id}(id=${student.id})}" 
               th:object="${student}" method="post" class="card p-4">
             <div class="mb-3">
                 <label for="matricule" class="form-label">Matricule</label>

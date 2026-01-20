@@ -3,6 +3,7 @@ package com.formation.service;
 import com.formation.constants.AppConstants;
 import com.formation.constants.UserType;
 import com.formation.dto.RegistrationDto;
+import com.formation.dto.UserCreationResult;
 import com.formation.entity.*;
 import com.formation.repository.*;
 import com.formation.exception.BusinessException;
@@ -47,7 +48,21 @@ public class RegistrationService {
     @Autowired
     private GroupRepository groupRepository;
     
+    /**
+     * Inscription publique (désactivée - réservée à l'admin)
+     */
     public void register(RegistrationDto registrationDto) {
+        // Pour l'inscription publique, le mot de passe est obligatoire
+        if (registrationDto.getPassword() == null || registrationDto.getPassword().trim().isEmpty()) {
+            throw new ValidationException("Le mot de passe est requis");
+        }
+        if (registrationDto.getPassword().length() < 6) {
+            throw new ValidationException("Le mot de passe doit contenir au moins 6 caractères");
+        }
+        if (registrationDto.getConfirmPassword() == null || !registrationDto.getPassword().equals(registrationDto.getConfirmPassword())) {
+            throw new ValidationException("Les mots de passe ne correspondent pas");
+        }
+        
         validateRegistration(registrationDto);
         
         try {
@@ -63,6 +78,36 @@ public class RegistrationService {
         }
     }
     
+    /**
+     * Création d'un utilisateur par l'admin avec génération automatique du mot de passe
+     * Retourne les informations nécessaires pour envoyer l'email
+     */
+    public UserCreationResult createUserByAdmin(RegistrationDto registrationDto) {
+        // Générer un mot de passe automatiquement si non fourni
+        if (registrationDto.getPassword() == null || registrationDto.getPassword().trim().isEmpty()) {
+            String generatedPassword = passwordService.generateRandomPassword();
+            registrationDto.setPassword(generatedPassword);
+            registrationDto.setConfirmPassword(generatedPassword);
+        }
+        
+        validateRegistration(registrationDto);
+        
+        try {
+            UserCreationResult result;
+            if (UserType.ETUDIANT.equals(registrationDto.getUserType())) {
+                result = registerStudentWithResult(registrationDto);
+            } else if (UserType.FORMATEUR.equals(registrationDto.getUserType())) {
+                result = registerTrainerWithResult(registrationDto);
+            } else {
+                throw new ValidationException("Type d'utilisateur invalide");
+            }
+            return result;
+        } catch (DataIntegrityViolationException e) {
+            handleDataIntegrityException(e);
+            return null; // Ne sera jamais atteint car handleDataIntegrityException lance une exception
+        }
+    }
+    
     private void validateRegistration(RegistrationDto dto) {
         if (userRepository.existsByUsername(dto.getUsername())) {
             throw new ValidationException("Ce nom d'utilisateur est déjà utilisé");
@@ -72,8 +117,15 @@ public class RegistrationService {
             throw new ValidationException("Cet email est déjà utilisé");
         }
         
-        if (!dto.getPassword().equals(dto.getConfirmPassword())) {
-            throw new ValidationException("Les mots de passe ne correspondent pas");
+        // Valider le mot de passe uniquement s'il est fourni (pour l'inscription publique)
+        // Pour la création par l'admin, le mot de passe sera généré automatiquement
+        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
+            if (dto.getPassword().length() < 6) {
+                throw new ValidationException("Le mot de passe doit contenir au moins 6 caractères");
+            }
+            if (dto.getConfirmPassword() == null || !dto.getPassword().equals(dto.getConfirmPassword())) {
+                throw new ValidationException("Les mots de passe ne correspondent pas");
+            }
         }
     }
     
@@ -92,9 +144,15 @@ public class RegistrationService {
     }
     
     private void registerStudent(RegistrationDto dto) {
+        UserCreationResult result = registerStudentWithResult(dto);
+        // Pour l'inscription publique, on ne retourne pas le résultat
+    }
+    
+    private UserCreationResult registerStudentWithResult(RegistrationDto dto) {
         Student student = new Student();
         student.setUsername(dto.getUsername());
-        student.setPassword(passwordService.encode(dto.getPassword()));
+        String plainPassword = dto.getPassword(); // Sauvegarder le mot de passe en clair avant encodage
+        student.setPassword(passwordService.encode(plainPassword));
         student.setEmail(dto.getEmail());
         student.setNom(dto.getNom());
         student.setPrenom(dto.getPrenom());
@@ -127,12 +185,27 @@ public class RegistrationService {
         student.setRoles(roles);
         
         studentRepository.save(student);
+        
+        // Retourner les informations pour l'email
+        return new UserCreationResult(
+            student.getUsername(),
+            plainPassword,
+            student.getEmail(),
+            student.getNom() + " " + student.getPrenom(),
+            UserType.ETUDIANT.toString()
+        );
     }
     
     private void registerTrainer(RegistrationDto dto) {
+        UserCreationResult result = registerTrainerWithResult(dto);
+        // Pour l'inscription publique, on ne retourne pas le résultat
+    }
+    
+    private UserCreationResult registerTrainerWithResult(RegistrationDto dto) {
         Trainer trainer = new Trainer();
         trainer.setUsername(dto.getUsername());
-        trainer.setPassword(passwordService.encode(dto.getPassword()));
+        String plainPassword = dto.getPassword(); // Sauvegarder le mot de passe en clair avant encodage
+        trainer.setPassword(passwordService.encode(plainPassword));
         trainer.setEmail(dto.getEmail());
         trainer.setNom(dto.getNom());
         trainer.setPrenom(dto.getPrenom());
@@ -162,6 +235,15 @@ public class RegistrationService {
         trainer.setRoles(roles);
         
         trainerRepository.save(trainer);
+        
+        // Retourner les informations pour l'email
+        return new UserCreationResult(
+            trainer.getUsername(),
+            plainPassword,
+            trainer.getEmail(),
+            trainer.getNom() + " " + trainer.getPrenom(),
+            UserType.FORMATEUR.toString()
+        );
     }
     
     /**
