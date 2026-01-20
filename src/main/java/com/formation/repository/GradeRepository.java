@@ -10,12 +10,13 @@ import java.util.Optional;
 
 @Repository
 public interface GradeRepository extends JpaRepository<Grade, Long> {
+    @Query("SELECT g FROM Grade g JOIN FETCH g.student JOIN FETCH g.cours WHERE g.student.id = :studentId AND g.cours.id = :coursId")
     Optional<Grade> findByStudentIdAndCoursId(Long studentId, Long coursId);
     
-    @Query("SELECT g FROM Grade g WHERE g.student.id = :studentId")
+    @Query("SELECT g FROM Grade g JOIN FETCH g.student JOIN FETCH g.cours WHERE g.student.id = :studentId")
     List<Grade> findByStudentId(Long studentId);
     
-    @Query("SELECT g FROM Grade g WHERE g.cours.id = :coursId")
+    @Query("SELECT g FROM Grade g JOIN FETCH g.student JOIN FETCH g.cours WHERE g.cours.id = :coursId")
     List<Grade> findByCoursId(Long coursId);
     
     @Query("SELECT g FROM Grade g WHERE g.cours.id IN :courseIds")

@@ -56,23 +56,23 @@
                         <tr th:if="${sessions == null or sessions.isEmpty()}">
                             <td colspan="5" class="text-center text-muted">Aucune session trouvée</td>
                         </tr>
-                        <tr th:each="session : ${sessions}" th:if="${sessions != null and !sessions.isEmpty()}">
-                            <td th:text="${session.nom}"></td>
-                            <td th:text="${session.dateDebut != null ? #temporals.format(session.dateDebut, 'dd/MM/yyyy') : '-'}"></td>
-                            <td th:text="${session.dateFin != null ? #temporals.format(session.dateFin, 'dd/MM/yyyy') : '-'}"></td>
+                        <tr th:each="sessionItem : ${sessions}" th:if="${sessions != null and !sessions.isEmpty()}">
+                            <td th:text="${sessionItem.nom}"></td>
+                            <td th:text="${sessionItem.dateDebut != null ? #temporals.format(sessionItem.dateDebut, 'dd/MM/yyyy') : '-'}"></td>
+                            <td th:text="${sessionItem.dateFin != null ? #temporals.format(sessionItem.dateFin, 'dd/MM/yyyy') : '-'}"></td>
                             <td>
-                                <span th:if="${session.type != null}" th:switch="${session.type.name()}">
+                                <span th:if="${sessionItem.type != null}" th:switch="${sessionItem.type.name()}">
                                     <span th:case="'SEMESTRE'" class="badge bg-info">Semestre</span>
                                     <span th:case="'ANNEE_SCOLAIRE'" class="badge bg-primary">Année scolaire</span>
                                     <span th:case="*" class="text-muted">-</span>
                                 </span>
-                                <span th:if="${session.type == null}" class="text-muted">-</span>
+                                <span th:if="${sessionItem.type == null}" class="text-muted">-</span>
                             </td>
                             <td>
-                                <a th:href="@{/admin/sessions/{id}/edit(id=${session.id})}" class="btn btn-sm btn-warning">
+                                <a th:href="@{/admin/sessions/{id}/edit(id=${sessionItem.id})}" class="btn btn-sm btn-warning">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a th:href="@{/admin/sessions/{id}/delete(id=${session.id})}" 
+                                <a th:href="@{/admin/sessions/{id}/delete(id=${sessionItem.id})}" 
                                    class="btn btn-sm btn-danger"
                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette session?')">
                                     <i class="bi bi-trash"></i>

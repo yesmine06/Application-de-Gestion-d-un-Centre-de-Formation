@@ -41,6 +41,7 @@ public class Course {
     
     @ManyToOne
     @JoinColumn(name = "session_id")
+    @JsonIgnoreProperties({"courses"}) // Éviter la récursion infinie avec Session
     private Session session;
     
     @ManyToMany(fetch = FetchType.LAZY)
@@ -62,7 +63,7 @@ public class Course {
     @OneToMany(mappedBy = "cours", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @JsonIgnoreProperties({"cours"})
+    @JsonIgnoreProperties({"cours", "student"}) // Éviter la récursion infinie avec Grade
     private List<Grade> grades = new ArrayList<>();
     
     @OneToMany(mappedBy = "cours", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

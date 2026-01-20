@@ -12,10 +12,10 @@ import java.util.Optional;
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     Optional<Enrollment> findByStudentIdAndCoursId(Long studentId, Long coursId);
     
-    @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId")
+    @Query("SELECT e FROM Enrollment e JOIN FETCH e.cours LEFT JOIN FETCH e.cours.formateur LEFT JOIN FETCH e.cours.session WHERE e.student.id = :studentId")
     List<Enrollment> findByStudentId(Long studentId);
     
-    @Query("SELECT e FROM Enrollment e WHERE e.cours.id = :coursId")
+    @Query("SELECT e FROM Enrollment e JOIN FETCH e.student LEFT JOIN FETCH e.student.group LEFT JOIN FETCH e.student.specialty WHERE e.cours.id = :coursId")
     List<Enrollment> findByCoursId(Long coursId);
     
     @Query("SELECT e FROM Enrollment e WHERE e.cours.id IN :courseIds")

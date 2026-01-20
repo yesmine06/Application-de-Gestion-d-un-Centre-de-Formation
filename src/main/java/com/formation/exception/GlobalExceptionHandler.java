@@ -40,11 +40,16 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
         
+        // Formater les erreurs de manière plus lisible
+        String errorMessage = errors.entrySet().stream()
+            .map(entry -> entry.getKey() + ": " + entry.getValue())
+            .collect(Collectors.joining(", "));
+        
         ErrorResponse errorResponse = new ErrorResponse(
             LocalDateTime.now(),
             HttpStatus.BAD_REQUEST.value(),
             "Erreur de validation",
-            errors.toString(),
+            errorMessage,
             request.getDescription(false)
         );
         
@@ -60,17 +65,33 @@ public class GlobalExceptionHandler {
         
         String message = "Erreur de contrainte de données";
         String errorMessage = ex.getMessage();
+        String rootCause = ex.getRootCause() != null ? ex.getRootCause().getMessage() : null;
         
         // Messages d'erreur plus conviviaux
-        if (errorMessage != null) {
-            if (errorMessage.contains("username") || errorMessage.contains("UK_USERNAME")) {
-                message = "Ce nom d'utilisateur est déjà utilisé";
-            } else if (errorMessage.contains("email") || errorMessage.contains("UK_EMAIL")) {
-                message = "Cet email est déjà utilisé";
-            } else if (errorMessage.contains("matricule") || errorMessage.contains("UK_MATRICULE")) {
-                message = "Ce matricule est déjà utilisé";
-            } else if (errorMessage.contains("foreign key") || errorMessage.contains("FK_")) {
-                message = "Impossible de supprimer cet élément car il est référencé ailleurs";
+        if (errorMessage != null || rootCause != null) {
+            String fullMessage = rootCause != null ? rootCause : errorMessage;
+            if (fullMessage != null) {
+                if (fullMessage.contains("username") || fullMessage.contains("UK_USERNAME") || 
+                    fullMessage.contains("duplicate key value violates unique constraint")) {
+                    message = "Ce nom d'utilisateur est déjà utilisé";
+                } else if (fullMessage.contains("email") || fullMessage.contains("UK_EMAIL")) {
+                    message = "Cet email est déjà utilisé";
+                } else if (fullMessage.contains("matricule") || fullMessage.contains("UK_MATRICULE")) {
+                    message = "Ce matricule est déjà utilisé";
+                } else if (fullMessage.contains("foreign key") || fullMessage.contains("FK_") ||
+                          fullMessage.contains("violates foreign key constraint")) {
+                    message = "Impossible de supprimer cet élément car il est référencé ailleurs";
+                } else if (fullMessage.contains("cannot be null") || fullMessage.contains("Column") && fullMessage.contains("cannot be null")) {
+                    message = "Des champs obligatoires sont manquants";
+                } else if (fullMessage.contains("duplicate key") || fullMessage.contains("unique constraint")) {
+                    // Détecter spécifiquement les doublons d'inscription
+                    if (fullMessage.contains("enrollments") || fullMessage.contains("UKoqknwxp06v1rdv47dhux2s9ib") ||
+                        (fullMessage.contains("Duplicate entry") && fullMessage.contains("-"))) {
+                        message = "L'étudiant est déjà inscrit à ce cours";
+                    } else {
+                        message = "Cette valeur existe déjà dans la base de données";
+                    }
+                }
             }
         }
         
@@ -78,11 +99,11 @@ public class GlobalExceptionHandler {
             LocalDateTime.now(),
             HttpStatus.CONFLICT.value(),
             message,
-            errorMessage,
+            rootCause != null ? rootCause : errorMessage,
             request.getDescription(false)
         );
         
-        logger.warn("DataIntegrityViolation: {}", errorMessage);
+        logger.warn("DataIntegrityViolation: {}", rootCause != null ? rootCause : errorMessage);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
     
@@ -176,6 +197,25 @@ public class GlobalExceptionHandler {
         );
         
         logger.warn("BusinessException: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+    
+    /**
+     * Gère les erreurs d'argument invalide
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex, WebRequest request) {
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+            LocalDateTime.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            "Argument invalide",
+            ex.getMessage(),
+            request.getDescription(false)
+        );
+        
+        logger.warn("IllegalArgumentException: {}", ex.getMessage());
         return ResponseEntity.badRequest().body(errorResponse);
     }
     

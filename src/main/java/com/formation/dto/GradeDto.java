@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * DTO pour les notes
@@ -18,10 +19,12 @@ public class GradeDto implements Serializable {
     private Long id;
     private Long studentId;
     private String studentName;
+    private String studentMatricule;
     private Long coursId;
     private String coursTitre;
     private Double valeur;
     private String commentaire;
+    private LocalDateTime dateAttribution;
     
     public static GradeDto fromEntity(Grade grade) {
         GradeDto dto = new GradeDto();
@@ -29,10 +32,12 @@ public class GradeDto implements Serializable {
         dto.setStudentId(grade.getStudent() != null ? grade.getStudent().getId() : null);
         dto.setStudentName(grade.getStudent() != null ? 
             grade.getStudent().getPrenom() + " " + grade.getStudent().getNom() : null);
+        dto.setStudentMatricule(grade.getStudent() != null ? grade.getStudent().getMatricule() : null);
         dto.setCoursId(grade.getCours() != null ? grade.getCours().getId() : null);
         dto.setCoursTitre(grade.getCours() != null ? grade.getCours().getTitre() : null);
         dto.setValeur(grade.getValeur());
         dto.setCommentaire(grade.getCommentaire());
+        dto.setDateAttribution(grade.getDateAttribution());
         return dto;
     }
 }

@@ -136,6 +136,11 @@ public class ScheduleService extends EntityService<Schedule, Long> {
     public Schedule update(Long id, Schedule scheduleDetails) {
         Schedule schedule = findByIdOrThrow(id, "Planning");
         
+        // Charger le cours si un nouveau cours est fourni
+        if (scheduleDetails.getCours() != null && scheduleDetails.getCours().getId() != null) {
+            loadCourse(scheduleDetails); // Charger le cours complet depuis la base de données
+        }
+        
         updateBasicFields(schedule, scheduleDetails);
         validateNoConflicts(schedule);
         
@@ -153,6 +158,11 @@ public class ScheduleService extends EntityService<Schedule, Long> {
         schedule.setHeureDebut(scheduleDetails.getHeureDebut());
         schedule.setHeureFin(scheduleDetails.getHeureFin());
         schedule.setSalle(scheduleDetails.getSalle());
+        
+        // Mettre à jour le cours si fourni
+        if (scheduleDetails.getCours() != null) {
+            schedule.setCours(scheduleDetails.getCours());
+        }
         
         if (scheduleDetails.getStatus() != null) {
             schedule.setStatus(scheduleDetails.getStatus());

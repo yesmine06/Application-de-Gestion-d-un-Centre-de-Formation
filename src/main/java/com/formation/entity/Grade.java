@@ -1,5 +1,6 @@
 package com.formation.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -29,10 +30,12 @@ public class Grade {
     
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnoreProperties({"grades", "enrollments"}) // Éviter la récursion infinie avec Student
     private Student student;
     
     @ManyToOne
     @JoinColumn(name = "cours_id", nullable = false)
+    @JsonIgnoreProperties({"grades", "enrollments", "schedules"}) // Éviter la récursion infinie avec Course
     private Course cours;
 }
 

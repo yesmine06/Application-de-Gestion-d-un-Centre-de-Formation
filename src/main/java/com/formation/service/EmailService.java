@@ -19,6 +19,30 @@ public class EmailService {
     @Value("${spring.mail.username:}")
     private String fromEmail;
     
+    @Value("${spring.mail.host:}")
+    private String mailHost;
+    
+    @Value("${spring.mail.port:0}")
+    private int mailPort;
+    
+    /**
+     * Méthode appelée après l'injection des dépendances pour logger la configuration
+     */
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        if (mailSender != null) {
+            logger.info("✅ EmailService configuré avec succès");
+            logger.info("   Host: {}", mailHost);
+            logger.info("   Port: {}", mailPort);
+            logger.info("   Username: {}", fromEmail);
+            logger.info("   JavaMailSender: {}", mailSender.getClass().getName());
+        } else {
+            logger.warn("⚠️ EmailService non configuré - JavaMailSender est null");
+            logger.warn("   Vérifiez que spring.mail.host, spring.mail.port, spring.mail.username et spring.mail.password sont définis");
+            logger.warn("   Host actuel: '{}', Port: {}, Username: '{}'", mailHost, mailPort, fromEmail);
+        }
+    }
+    
     /**
      * Vérifie si le service email est configuré
      */
@@ -229,6 +253,15 @@ public class EmailService {
             
             mailSender.send(message);
             logger.info("✅ Email de coordonnées de connexion envoyé avec succès à: {} (username: {})", to, username);
+        } catch (org.springframework.mail.MailAuthenticationException e) {
+            logger.error("❌ Erreur d'authentification SMTP lors de l'envoi de l'email à {}: {}", to, e.getMessage());
+            logger.error("   Vérifiez que le nom d'utilisateur et le mot de passe sont corrects");
+            logger.error("   Pour Gmail, utilisez un 'Mot de passe d'application' si l'authentification à 2 facteurs est activée");
+            // On ne propage pas l'exception pour ne pas bloquer la création du compte
+        } catch (org.springframework.mail.MailSendException e) {
+            logger.error("❌ Erreur d'envoi SMTP lors de l'envoi de l'email à {}: {}", to, e.getMessage());
+            logger.error("   Vérifiez la configuration SMTP (host, port, firewall)");
+            // On ne propage pas l'exception pour ne pas bloquer la création du compte
         } catch (Exception e) {
             logger.error("❌ Erreur lors de l'envoi de l'email de coordonnées de connexion à {}: {}", to, e.getMessage(), e);
             // On ne propage pas l'exception pour ne pas bloquer la création du compte

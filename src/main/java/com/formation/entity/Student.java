@@ -50,7 +50,7 @@ public class Student extends User {
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @JsonIgnoreProperties({"student"})
+    @JsonIgnoreProperties({"student", "cours"}) // Éviter la récursion infinie avec Grade
     private List<Grade> grades = new ArrayList<>();
 }
 

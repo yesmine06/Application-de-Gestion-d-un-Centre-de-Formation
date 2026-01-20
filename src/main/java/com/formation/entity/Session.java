@@ -1,5 +1,6 @@
 package com.formation.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,6 +37,7 @@ public class Session {
     @OneToMany(mappedBy = "session")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnoreProperties({"session"}) // Éviter la récursion infinie avec Course
     private List<Course> courses = new ArrayList<>();
     
     public enum SessionType {

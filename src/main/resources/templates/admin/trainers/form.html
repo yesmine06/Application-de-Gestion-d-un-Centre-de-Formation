@@ -17,7 +17,8 @@
     </nav>
 
     <div class="container mt-4">
-        <h1 th:text="${trainer != null && trainer.id != null} ? 'Modifier Formateur' : 'Nouveau Formateur'"></h1>
+        <h1 th:if="${registrationDto != null}">Nouveau Formateur</h1>
+        <h1 th:if="${trainer != null and trainer.id != null}">Modifier Formateur</h1>
 
         <!-- Formulaire de création avec RegistrationDto -->
         <form th:if="${registrationDto != null}" 
@@ -51,7 +52,7 @@
         </form>
 
         <!-- Formulaire de modification avec Trainer -->
-        <form th:if="${trainer != null && trainer.id != null}" 
+        <form th:if="${trainer != null and trainer.id != null}" 
               th:action="@{/admin/trainers/{id}(id=${trainer.id})}" 
               th:object="${trainer}" method="post" class="card p-4">
             <div class="mb-3">

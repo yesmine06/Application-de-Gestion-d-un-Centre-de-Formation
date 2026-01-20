@@ -63,19 +63,19 @@ const apiService = {
     },
 
     async getGradesByCourse(courseId, token) {
+        console.log('Appel API getGradesByCourse:', `${API_BASE_URL}/grades/course/${courseId}`);
         const response = await fetch(`${API_BASE_URL}/grades/course/${courseId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!response.ok) throw new Error('Erreur de chargement');
-        return await response.json();
-    },
-
-    async getEnrollmentsByCourse(courseId, token) {
-        const response = await fetch(`${API_BASE_URL}/inscriptions/course/${courseId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error('Erreur de chargement');
-        return await response.json();
+        console.log('Réponse API notes:', response.status, response.statusText);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Erreur API notes:', errorText);
+            throw new Error(`Erreur de chargement: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log('Données reçues (notes):', data);
+        return data;
     },
 
     // Course Files API
@@ -178,6 +178,22 @@ const apiService = {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!response.ok) throw new Error('Erreur lors de la suppression');
+    },
+
+    async createCourse(course, token) {
+        const response = await fetch(`${API_BASE_URL}/cours/trainer/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(course)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Erreur lors de la création du cours');
+        }
+        return await response.json();
     }
 };
 
@@ -271,16 +287,25 @@ function CourseCard({ course, onSelect }) {
 }
 
 // Courses Tab
-function Courses({ trainerId, token }) {
+function Courses({ trainerId, token, onCourseCreated, isActive }) {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [enrollments, setEnrollments] = useState([]);
     const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [formData, setFormData] = useState({
+        code: '',
+        titre: '',
+        description: ''
+    });
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [creating, setCreating] = useState(false);
 
     useEffect(() => {
         loadCourses();
-    }, []);
+    }, [trainerId, token, isActive]); // Recharger si trainerId, token change ou si l'onglet devient actif
 
     const loadCourses = async () => {
         try {
@@ -306,6 +331,37 @@ function Courses({ trainerId, token }) {
         }
     };
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleCreateCourse = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        setCreating(true);
+
+        try {
+            const newCourse = {
+                code: formData.code,
+                titre: formData.titre,
+                description: formData.description || null
+            };
+            
+            await apiService.createCourse(newCourse, token);
+            setSuccess('Cours créé avec succès !');
+            setFormData({ code: '', titre: '', description: '' });
+            setShowCreateForm(false);
+            await loadCourses();
+            if (onCourseCreated) onCourseCreated();
+        } catch (err) {
+            setError(err.message || 'Erreur lors de la création du cours');
+        } finally {
+            setCreating(false);
+        }
+    };
+
     if (loading) {
         return <div className="text-center"><div className="spinner-border text-primary"></div></div>;
     }
@@ -317,6 +373,10 @@ function Courses({ trainerId, token }) {
                     <i className="bi bi-arrow-left me-2"></i>Retour
                 </button>
                 <h3>{selectedCourse.titre}</h3>
+                <p className="text-muted">Code: {selectedCourse.code}</p>
+                {selectedCourse.description && (
+                    <p className="mb-4">{selectedCourse.description}</p>
+                )}
                 <h5 className="mb-4">Étudiants inscrits</h5>
                 {loadingEnrollments ? (
                     <div className="text-center"><div className="spinner-border text-primary"></div></div>
@@ -350,20 +410,131 @@ function Courses({ trainerId, token }) {
         );
     }
 
-    if (courses.length === 0) {
-        return <div className="alert alert-info"><i className="bi bi-info-circle me-2"></i>Aucun cours assigné pour le moment.</div>;
-    }
-
     return (
-        <div className="row">
-            {courses.map(course => (
-                <CourseCard
-                    key={course.id}
-                    course={course}
-                    onSelect={handleSelectCourse}
-                />
-            ))}
-        </div>
+        <>
+            {error && <div className="alert alert-danger">{error}</div>}
+            {success && <div className="alert alert-success">{success}</div>}
+
+            <div className="mb-3">
+                <button
+                    className="btn btn-primary"
+                    onClick={() => setShowCreateForm(!showCreateForm)}
+                >
+                    {showCreateForm ? (
+                        <>
+                            <i className="bi bi-x-circle me-2"></i>Annuler
+                        </>
+                    ) : (
+                        <>
+                            <i className="bi bi-plus-circle me-2"></i>Créer un nouveau cours
+                        </>
+                    )}
+                </button>
+            </div>
+
+            {showCreateForm && (
+                <div className="card mb-4">
+                    <div className="card-header">
+                        <h5 className="mb-0">Nouveau cours</h5>
+                    </div>
+                    <div className="card-body">
+                        <form onSubmit={handleCreateCourse}>
+                            <div className="row">
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Code du cours *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="code"
+                                        value={formData.code}
+                                        onChange={handleInputChange}
+                                        placeholder="Ex: JAVA-101"
+                                        required
+                                        disabled={creating}
+                                    />
+                                    <small className="text-muted">Code unique pour identifier le cours</small>
+                                </div>
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Titre du cours *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="titre"
+                                        value={formData.titre}
+                                        onChange={handleInputChange}
+                                        placeholder="Ex: Programmation Java"
+                                        required
+                                        disabled={creating}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Description</label>
+                                <textarea
+                                    className="form-control"
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    rows="3"
+                                    placeholder="Description du cours (optionnel)"
+                                    disabled={creating}
+                                />
+                            </div>
+                            <div className="d-flex gap-2">
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={creating}
+                                >
+                                    {creating ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2"></span>
+                                            Création en cours...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="bi bi-save me-2"></i>Créer le cours
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={() => {
+                                        setShowCreateForm(false);
+                                        setFormData({ code: '', titre: '', description: '' });
+                                        setError('');
+                                        setSuccess('');
+                                    }}
+                                    disabled={creating}
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {loading ? (
+                <div className="text-center"><div className="spinner-border text-primary"></div></div>
+            ) : courses.length === 0 ? (
+                <div className="alert alert-info">
+                    <i className="bi bi-info-circle me-2"></i>
+                    Aucun cours pour le moment. Créez votre premier cours en cliquant sur le bouton ci-dessus.
+                </div>
+            ) : (
+                <div className="row">
+                    {courses.map(course => (
+                        <CourseCard
+                            key={course.id}
+                            course={course}
+                            onSelect={handleSelectCourse}
+                        />
+                    ))}
+                </div>
+            )}
+        </>
     );
 }
 
@@ -393,8 +564,26 @@ function GradeForm({ courses, token, onGradeSaved }) {
         setLoadingStudents(true);
         try {
             const enrollments = await apiService.getEnrollmentsByCourse(parseInt(courseId), token);
-            const students = enrollments.map(e => e.student).filter(s => s);
+            // Le DTO peut retourner soit e.student (objet complet) soit studentId/studentName/studentMatricule
+            const students = enrollments
+                .filter(e => (e.student && e.student.id) || e.studentId) // Filtrer les inscriptions valides
+                .map(e => {
+                    // Utiliser l'objet student si disponible, sinon créer à partir des propriétés
+                    if (e.student && e.student.id) {
+                        return e.student;
+                    } else {
+                        return {
+                            id: e.studentId,
+                            nom: e.studentName ? e.studentName.split(' ').slice(-1)[0] : '',
+                            prenom: e.studentName ? e.studentName.split(' ').slice(0, -1).join(' ') : '',
+                            matricule: e.studentMatricule,
+                            username: '',
+                            email: ''
+                        };
+                    }
+                });
             setEnrolledStudents(students);
+            console.log('Étudiants chargés pour le cours:', courseId, students.length, 'étudiants', students);
         } catch (err) {
             console.error('Erreur lors du chargement des étudiants:', err);
             setEnrolledStudents([]);
@@ -530,15 +719,25 @@ function Grades({ trainerId, courses, token, onGradeSaved }) {
             loadGrades();
         }
     }, [selectedCourse]);
+    
+    // Réinitialiser la sélection si le cours sélectionné n'existe plus dans la liste
+    useEffect(() => {
+        if (selectedCourse && !courses.find(c => c.id === selectedCourse.id)) {
+            setSelectedCourse(null);
+        }
+    }, [courses]);
 
     const loadGrades = async () => {
         if (!selectedCourse) return;
         setLoadingGrades(true);
         try {
             const data = await apiService.getGradesByCourse(selectedCourse.id, token);
-            setGrades(data);
+            console.log('Notes chargées pour le cours:', selectedCourse.id, data);
+            console.log('Première note (exemple):', data && data.length > 0 ? data[0] : 'Aucune note');
+            setGrades(data || []);
         } catch (err) {
-            console.error(err);
+            console.error('Erreur lors du chargement des notes:', err);
+            setGrades([]);
         } finally {
             setLoadingGrades(false);
         }
@@ -599,9 +798,13 @@ function Grades({ trainerId, courses, token, onGradeSaved }) {
                                 {grades.map(grade => (
                                     <tr key={grade.id}>
                                         <td>
-                                            {grade.student?.nom} {grade.student?.prenom}
-                                            <br />
-                                            <small className="text-muted">{grade.student?.matricule}</small>
+                                            {grade.studentName || (grade.student ? `${grade.student.prenom || ''} ${grade.student.nom || ''}`.trim() : 'N/A')}
+                                            {(grade.studentMatricule || grade.student?.matricule) && (
+                                                <>
+                                                    <br />
+                                                    <small className="text-muted">{grade.studentMatricule || grade.student?.matricule}</small>
+                                                </>
+                                            )}
                                         </td>
                                         <td>
                                             <strong className={grade.valeur >= 10 ? 'text-success' : 'text-danger'}>
@@ -609,7 +812,7 @@ function Grades({ trainerId, courses, token, onGradeSaved }) {
                                             </strong>
                                         </td>
                                         <td>{grade.commentaire || '-'}</td>
-                                        <td>{new Date(grade.dateAttribution).toLocaleDateString('fr-FR')}</td>
+                                        <td>{grade.dateAttribution ? new Date(grade.dateAttribution).toLocaleDateString('fr-FR') : '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -637,6 +840,13 @@ function CourseFiles({ courses, token }) {
             loadFiles();
         }
     }, [selectedCourse]);
+    
+    // Réinitialiser la sélection si le cours sélectionné n'existe plus dans la liste
+    useEffect(() => {
+        if (selectedCourse && !courses.find(c => c.id === selectedCourse.id)) {
+            setSelectedCourse(null);
+        }
+    }, [courses]);
 
     const loadFiles = async () => {
         if (!selectedCourse) return;
@@ -1136,6 +1346,7 @@ function App() {
     const [user, setUser] = useState(null);
     const [activeTab, setActiveTab] = useState('courses');
     const [courses, setCourses] = useState([]);
+    const [refreshKey, setRefreshKey] = useState(0); // Clé de rafraîchissement
 
     useEffect(() => {
         if (token) {
@@ -1147,7 +1358,7 @@ function App() {
         if (user && user.trainerId) {
             loadCourses();
         }
-    }, [user]);
+    }, [user, refreshKey]); // Recharger quand refreshKey change
 
     const verifyToken = async () => {
         try {
@@ -1161,11 +1372,21 @@ function App() {
 
     const loadCourses = async () => {
         try {
-            const data = await apiService.getCoursesByTrainer(user.trainerId, token);
-            setCourses(data);
+            if (user && user.trainerId) {
+                const data = await apiService.getCoursesByTrainer(user.trainerId, token);
+                setCourses(data);
+                console.log('Cours du formateur rechargés:', data.length, 'cours');
+            }
         } catch (err) {
-            console.error(err);
+            console.error('Erreur lors du chargement des cours:', err);
         }
+    };
+    
+    const handleCourseCreated = () => {
+        // Incrémenter refreshKey pour forcer le rechargement
+        setRefreshKey(prev => prev + 1);
+        // Recharger immédiatement les cours
+        loadCourses();
     };
 
     const handleLogin = (newToken, userInfo) => {
@@ -1244,7 +1465,7 @@ function App() {
                     </li>
                 </ul>
 
-                {activeTab === 'courses' && <Courses trainerId={trainerId} token={token} />}
+                {activeTab === 'courses' && <Courses trainerId={trainerId} token={token} onCourseCreated={handleCourseCreated} isActive={activeTab === 'courses'} />}
                 {activeTab === 'grades' && <Grades trainerId={trainerId} courses={courses} token={token} />}
                 {activeTab === 'files' && <CourseFiles courses={courses} token={token} />}
                 {activeTab === 'schedules' && <Schedules trainerId={trainerId} courses={courses} token={token} />}

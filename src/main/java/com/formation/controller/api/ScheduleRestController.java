@@ -61,6 +61,14 @@ public class ScheduleRestController {
     }
     
     /**
+     * GET /student/{studentId}/all - Toutes les séances approuvées d'un étudiant
+     */
+    @GetMapping("/student/{studentId}/all")
+    public ResponseEntity<List<Schedule>> getAllStudentSchedules(@PathVariable Long studentId) {
+        return ResponseEntity.ok(scheduleService.getAllStudentSchedules(studentId));
+    }
+    
+    /**
      * GET /trainer/{trainerId} - Séances d'un formateur
      */
     @GetMapping("/trainer/{trainerId}")

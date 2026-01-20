@@ -50,8 +50,19 @@ public class AdminTrainerController extends BaseAdminController<Trainer, Long> {
             // S'assurer que le type est FORMATEUR
             registrationDto.setUserType(UserType.FORMATEUR.toString());
             
+            // Log pour débogage
+            org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AdminTrainerController.class);
+            logger.info("Création d'un formateur - Username: {}, Email: {}, Spécialité: {}", 
+                registrationDto.getUsername(), registrationDto.getEmail(), registrationDto.getSpecialite());
+            
             // Créer l'utilisateur via RegistrationService (génère le mot de passe automatiquement)
             UserCreationResult result = registrationService.createUserByAdmin(registrationDto);
+            
+            if (result == null) {
+                throw new RuntimeException("La création du formateur a échoué - résultat null");
+            }
+            
+            logger.info("Formateur créé avec succès - ID: {}, Username: {}", result.getUsername(), result.getUsername());
             
             // Envoyer l'email avec les coordonnées
             emailService.sendAccountCredentials(
@@ -65,6 +76,8 @@ public class AdminTrainerController extends BaseAdminController<Trainer, Long> {
             redirectAttributes.addFlashAttribute("success", 
                 "Formateur créé avec succès. Les coordonnées de connexion ont été envoyées par email.");
         } catch (Exception e) {
+            org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AdminTrainerController.class);
+            logger.error("Erreur lors de la création du formateur", e);
             redirectAttributes.addFlashAttribute("error", "Erreur lors de la création: " + e.getMessage());
         }
         return "redirect:/admin/trainers";

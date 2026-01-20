@@ -6,8 +6,6 @@ import com.formation.entity.Enrollment;
 import com.formation.exception.ResourceNotFoundException;
 import com.formation.service.EnrollmentService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +15,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/inscriptions")
-public class EnrollmentRestController extends BaseRestController<Enrollment, Long, EnrollmentDto> {
+public class EnrollmentRestController {
     
     private final EnrollmentService enrollmentService;
     
@@ -25,52 +23,57 @@ public class EnrollmentRestController extends BaseRestController<Enrollment, Lon
         this.enrollmentService = enrollmentService;
     }
     
-    @Override
-    protected Enrollment findByIdOrThrow(Long id) {
-        return enrollmentService.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Inscription non trouvée avec l'ID: " + id));
-    }
-    
-    @Override
-    protected List<Enrollment> findAll() {
-        return enrollmentService.findAll();
-    }
-    
-    @Override
-    protected Page<Enrollment> findAll(Pageable pageable) {
-        // EnrollmentService n'a pas de pagination, retourner une page vide
-        return Page.empty();
-    }
-    
-    @Override
-    protected Enrollment save(Enrollment entity) {
-        return enrollmentService.save(entity);
-    }
-    
-    @Override
-    protected Enrollment update(Long id, Enrollment entity) {
-        return enrollmentService.save(entity);
-    }
-    
-    @Override
-    protected void delete(Long id) {
-        enrollmentService.delete(id);
-    }
-    
-    @Override
-    protected EnrollmentDto toDto(Enrollment entity) {
+    private EnrollmentDto toDto(Enrollment entity) {
         return EnrollmentDto.fromEntity(entity);
     }
     
-    @Override
-    protected String getEntityName() {
-        return "Inscription";
+    /**
+     * GET / - Liste des inscriptions
+     */
+    @GetMapping
+    public ResponseEntity<List<EnrollmentDto>> getAll() {
+        List<Enrollment> enrollments = enrollmentService.findAll();
+        List<EnrollmentDto> dtos = enrollments.stream()
+            .map(this::toDto)
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
     
     /**
-     * POST /create - Créer une inscription
+     * GET /{id} - Trouver par ID
      */
-    @PostMapping("/create")
+    @GetMapping("/{id}")
+    public ResponseEntity<EnrollmentDto> getById(@PathVariable Long id) {
+        Enrollment enrollment = enrollmentService.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Inscription non trouvée avec l'ID: " + id));
+        return ResponseEntity.ok(toDto(enrollment));
+    }
+    
+    /**
+     * POST / - Créer une inscription
+     * Accepte EnrollmentRequestDto au lieu d'Enrollment
+     */
+    @PostMapping
+    public ResponseEntity<EnrollmentDto> create(@Valid @RequestBody EnrollmentRequestDto request) {
+        // Validation et logging
+        if (request.getStudentId() == null) {
+            throw new IllegalArgumentException("L'ID de l'étudiant est requis");
+        }
+        if (request.getCoursId() == null) {
+            throw new IllegalArgumentException("L'ID du cours est requis");
+        }
+        
+        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(EnrollmentRestController.class);
+        logger.info("Création d'inscription - StudentId: {}, CoursId: {}", request.getStudentId(), request.getCoursId());
+        
+        Enrollment enrollment = enrollmentService.enroll(request.getStudentId(), request.getCoursId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(enrollment));
+    }
+    
+    /**
+     * POST /create - Créer une inscription (endpoint alternatif pour compatibilité)
+     */
+    @PostMapping(value = "/create", consumes = "application/json")
     public ResponseEntity<EnrollmentDto> createEnrollment(@Valid @RequestBody EnrollmentRequestDto request) {
         Enrollment enrollment = enrollmentService.enroll(request.getStudentId(), request.getCoursId());
         return ResponseEntity.status(HttpStatus.CREATED).body(toDto(enrollment));
