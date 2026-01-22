@@ -1,0 +1,1046 @@
+@startuml Diagramme_Cas_Utilisation
+!theme plain
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+}
+
+actor Admin
+actor Formateur
+actor Étudiant
+
+rectangle "Système de Gestion de Formation" {
+    usecase "Authentification" as UC_Auth
+    
+    package "Fonctionnalités Admin" {
+        usecase "Gérer les étudiants" as UC_Admin_Students
+        usecase "Gérer les formateurs" as UC_Admin_Trainers
+        usecase "Créer des comptes\n(avec envoi email)" as UC_Admin_Create
+        usecase "Gérer les cours" as UC_Admin_Courses
+        usecase "Gérer les sessions" as UC_Admin_Sessions
+        usecase "Gérer les groupes" as UC_Admin_Groups
+        usecase "Gérer les spécialités" as UC_Admin_Specialties
+        usecase "Assigner des cours\naux formateurs" as UC_Admin_Assign
+    }
+    
+    package "Fonctionnalités Formateur" {
+        usecase "Créer des cours" as UC_Trainer_Create
+        usecase "Attribuer des notes" as UC_Trainer_Grades
+        usecase "Visualiser les notes\npar cours" as UC_Trainer_ViewGrades
+        usecase "Upload de fichiers" as UC_Trainer_Upload
+        usecase "Télécharger des fichiers" as UC_Trainer_Download
+        usecase "Supprimer des fichiers" as UC_Trainer_Delete
+        usecase "Créer une séance" as UC_Trainer_ScheduleCreate
+        usecase "Modifier une séance" as UC_Trainer_ScheduleEdit
+        usecase "Supprimer une séance" as UC_Trainer_ScheduleDelete
+        usecase "Visualiser les étudiants\npar cours" as UC_Trainer_ViewStudents
+    }
+    
+    package "Fonctionnalités Étudiant" {
+        usecase "Consulter les cours\ndisponibles" as UC_Student_ViewAvailable
+        usecase "S'inscrire à un cours" as UC_Student_Enroll
+        usecase "Se désinscrire\nd'un cours" as UC_Student_Unenroll
+        usecase "Consulter ses notes" as UC_Student_ViewGrades
+        usecase "Consulter sa moyenne\ngénérale" as UC_Student_Average
+        usecase "Consulter l'emploi\ndu temps" as UC_Student_Schedule
+        usecase "Calendrier mensuel" as UC_Student_Calendar
+        usecase "Filtrage par cours" as UC_Student_Filter
+        usecase "Détails des séances" as UC_Student_Details
+        usecase "Télécharger les fichiers\nde cours" as UC_Student_Download
+    }
+}
+
+Admin --> UC_Auth
+Admin --> UC_Admin_Students
+Admin --> UC_Admin_Trainers
+Admin --> UC_Admin_Create
+Admin --> UC_Admin_Courses
+Admin --> UC_Admin_Sessions
+Admin --> UC_Admin_Groups
+Admin --> UC_Admin_Specialties
+Admin --> UC_Admin_Assign
+
+Formateur --> UC_Auth
+Formateur --> UC_Trainer_Create
+Formateur --> UC_Trainer_Grades
+Formateur --> UC_Trainer_ViewGrades
+Formateur --> UC_Trainer_Upload
+Formateur --> UC_Trainer_Download
+Formateur --> UC_Trainer_Delete
+Formateur --> UC_Trainer_ScheduleCreate
+Formateur --> UC_Trainer_ScheduleEdit
+Formateur --> UC_Trainer_ScheduleDelete
+Formateur --> UC_Trainer_ViewStudents
+
+Étudiant --> UC_Auth
+Étudiant --> UC_Student_ViewAvailable
+Étudiant --> UC_Student_Enroll
+Étudiant --> UC_Student_Unenroll
+Étudiant --> UC_Student_ViewGrades
+Étudiant --> UC_Student_Average
+Étudiant --> UC_Student_Schedule
+Étudiant --> UC_Student_Calendar
+Étudiant --> UC_Student_Filter
+Étudiant --> UC_Student_Details
+Étudiant --> UC_Student_Download
+
+@enduml
+
+@startuml Diagramme_Classes
+!theme plain
+skinparam classAttributeIconSize 0
+
+abstract class User {
+    - id : Long
+    - username : String
+    - password : String
+    - email : String
+    - nom : String
+    - prenom : String
+    - enabled : Boolean
+    - dateCreation : LocalDateTime
+    - roles : Set<Role>
+}
+
+class Student {
+    - matricule : String
+    - dateInscription : LocalDate
+}
+
+class Trainer {
+    - specialite : String
+}
+
+class Role {
+    - id : Long
+    - name : RoleType
+}
+
+enum RoleType {
+    ADMIN
+    FORMATEUR
+    ETUDIANT
+}
+
+class Course {
+    - id : Long
+    - code : String
+    - titre : String
+    - description : String
+}
+
+class Enrollment {
+    - id : Long
+    - dateInscription : LocalDateTime
+}
+
+class Grade {
+    - id : Long
+    - valeur : Double
+    - commentaire : String
+    - dateAttribution : LocalDateTime
+}
+
+class Schedule {
+    - id : Long
+    - date : LocalDate
+    - heureDebut : LocalTime
+    - heureFin : LocalTime
+    - salle : String
+    - status : ScheduleStatus
+}
+
+enum ScheduleStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+class Session {
+    - id : Long
+    - nom : String
+    - type : String
+    - dateDebut : LocalDate
+    - dateFin : LocalDate
+}
+
+class CourseFile {
+    - id : Long
+    - nomFichier : String
+    - typeMime : String
+    - taille : Long
+    - chemin : String
+    - dateUpload : LocalDateTime
+}
+
+class Group {
+    - id : Long
+    - nom : String
+    - description : String
+}
+
+class Specialty {
+    - id : Long
+    - nom : String
+    - description : String
+}
+
+' Relations d'héritage
+User <|-- Student
+User <|-- Trainer
+
+' Relations User-Role
+User "1" --> "*" Role : has
+
+' Relations Student
+Student "1" --> "*" Enrollment : has
+Student "1" --> "*" Grade : has
+Student "N" --> "1" Group : belongs to
+Student "N" --> "1" Specialty : has
+
+' Relations Trainer
+Trainer "1" --> "*" Course : teaches
+
+' Relations Course
+Course "N" --> "1" Trainer : taught by
+Course "N" --> "1" Session : belongs to
+Course "1" --> "*" Enrollment : has
+Course "1" --> "*" Grade : has
+Course "1" --> "*" Schedule : has
+Course "1" --> "*" CourseFile : has
+
+' Relations Enrollment
+Enrollment "N" --> "1" Student : belongs to
+Enrollment "N" --> "1" Course : for
+
+' Relations Grade
+Grade "N" --> "1" Student : for
+Grade "N" --> "1" Course : in
+
+' Relations Schedule
+Schedule "N" --> "1" Course : for
+
+@enduml
+
+@startuml Sequence_Authentification_JWT
+!theme plain
+actor "Client\n(Browser)" as Client
+participant "React App" as React
+participant "AuthController" as Auth
+participant "UserService" as UserService
+database "Database" as DB
+
+Client -> React : 1. Login Form\n(username, password)
+React -> Auth : 2. POST /api/auth/login\n{username, password}
+activate Auth
+
+Auth -> UserService : 3. findByUsername(username)
+activate UserService
+
+UserService -> DB : 4. SELECT user WHERE username
+activate DB
+DB --> UserService : 5. User data
+deactivate DB
+
+UserService -> UserService : 6. Validate password\n(BCrypt)
+UserService -> Auth : 7. User validated
+deactivate UserService
+
+Auth -> Auth : 8. Generate JWT Token
+
+Auth --> React : 9. Response\n{token, userInfo}
+deactivate Auth
+
+React -> React : 10. Store token\nin localStorage
+
+React --> Client : 11. Redirect to dashboard
+
+note right of React
+  Subsequent requests include:
+  Authorization: Bearer <token>
+end note
+
+@enduml
+
+@startuml Sequence_Inscription_Cours
+!theme plain
+actor Étudiant
+participant "React App" as React
+participant "EnrollmentRestController" as Controller
+participant "EnrollmentService" as Service
+database "Database" as DB
+
+Étudiant -> React : 1. Click "S'inscrire"
+React -> React : 2. Disable button\n(setEnrollingCourseId)
+
+React -> Controller : 3. POST /api/inscriptions\n{studentId, coursId}
+activate Controller
+
+Controller -> Service : 4. enroll(studentId, coursId)
+activate Service
+
+Service -> DB : 5. Check if exists\n(student_id, cours_id)
+activate DB
+DB --> Service : 6. Not exists
+deactivate DB
+
+Service -> DB : 7. INSERT enrollment
+activate DB
+DB --> Service : 8. Enrollment saved
+deactivate DB
+
+Service -> Controller : 9. EnrollmentDto
+deactivate Service
+
+Controller --> React : 10. Success Response\n(201 Created)
+deactivate Controller
+
+React -> React : 11. onEnrollSuccess()\n(refreshKey++)
+
+React -> React : 12. Refresh data\n- MyCourses\n- AvailableCourses
+
+React --> Étudiant : 13. UI Updated\n- Course in "Mes Cours"\n- Removed from "Disponibles"
+
+@enduml
+
+@startuml Sequence_Creation_Compte_Admin
+!theme plain
+actor Admin
+participant "Thymeleaf\nTemplate" as View
+participant "AdminStudentController" as Controller
+participant "RegistrationService" as RegService
+participant "PasswordService" as PwdService
+participant "EmailService" as EmailService
+database "Database" as DB
+participant "SMTP Server" as SMTP
+
+Admin -> View : 1. Fill form\n(nom, prenom, email, etc.)
+View -> Controller : 2. POST /admin/students\nRegistrationDto
+activate Controller
+
+Controller -> RegService : 3. createUserByAdmin(dto)
+activate RegService
+
+RegService -> PwdService : 4. generateRandomPassword()
+activate PwdService
+PwdService --> RegService : 5. Random password\n(12 chars)
+deactivate PwdService
+
+RegService -> PwdService : 6. encode(password)
+activate PwdService
+PwdService --> RegService : 7. Encoded password\n(BCrypt)
+deactivate PwdService
+
+RegService -> DB : 8. INSERT student
+activate DB
+DB --> RegService : 9. Student saved
+deactivate DB
+
+RegService -> RegService : 10. Create UserCreationResult
+RegService --> Controller : 11. UserCreationResult
+deactivate RegService
+
+Controller -> EmailService : 12. sendAccountCredentials\n(to, username, password)
+activate EmailService
+
+EmailService -> SMTP : 13. Send email\nwith credentials
+activate SMTP
+SMTP --> EmailService : 14. Email sent
+deactivate SMTP
+
+EmailService --> Controller : 15. Email sent
+deactivate EmailService
+
+Controller --> View : 16. Redirect with\nsuccess message
+deactivate Controller
+
+View --> Admin : 17. Success message\n"Compte créé avec succès"
+
+@enduml
+
+@startuml Sequence_Attribution_Note
+!theme plain
+actor Formateur
+participant "React App" as React
+participant "GradeRestController" as Controller
+participant "GradeService" as Service
+database "Database" as DB
+
+Formateur -> React : 1. Select course
+React -> React : 2. Load students\nfor selected course
+
+React -> Controller : 3. GET /api/inscriptions/course/{id}
+activate Controller
+
+Controller -> Service : 4. findByCourse(courseId)
+activate Service
+
+Service -> DB : 5. SELECT enrollments\nJOIN FETCH student, cours
+activate DB
+DB --> Service : 6. List<Enrollment>
+deactivate DB
+
+Service --> Controller : 7. List<EnrollmentDto>
+deactivate Service
+
+Controller --> React : 8. Students list
+deactivate Controller
+
+React --> Formateur : 9. Display students\nin dropdown
+
+Formateur -> React : 10. Fill grade form\n(valeur, commentaire)
+React -> Controller : 11. POST /api/grades/create\n{studentId, coursId, valeur, commentaire}
+activate Controller
+
+Controller -> Service : 12. saveOrUpdate\n(studentId, coursId, valeur, commentaire)
+activate Service
+
+Service -> DB : 13. Check if exists\nor create new
+activate DB
+DB --> Service : 14. Grade entity
+deactivate DB
+
+Service -> DB : 15. Save/Update grade
+activate DB
+DB --> Service : 16. Grade saved
+deactivate DB
+
+Service --> Controller : 17. GradeDto
+deactivate Service
+
+Controller --> React : 18. Success Response
+deactivate Controller
+
+React -> React : 19. Refresh grades list
+React --> Formateur : 20. Updated grades list
+
+@enduml
+
+@startuml Sequence_Upload_Fichier
+!theme plain
+actor Formateur
+participant "React App" as React
+participant "CourseFileRestController" as Controller
+participant "File Storage" as Storage
+database "Database" as DB
+
+Formateur -> React : 1. Select file
+React -> React : 2. Create FormData\n{file, courseId, description}
+
+React -> Controller : 3. POST /api/course-files/upload\nFormData
+activate Controller
+
+Controller -> Storage : 4. Save file to disk
+activate Storage
+Storage --> Controller : 5. File path
+deactivate Storage
+
+Controller -> DB : 6. INSERT course_file\n(nom, chemin, taille, etc.)
+activate DB
+DB --> Controller : 7. CourseFile saved
+deactivate DB
+
+Controller --> React : 8. CourseFileDto
+deactivate Controller
+
+React -> React : 9. Refresh files list
+React --> Formateur : 10. Updated files list
+
+@enduml
+
+@startuml Architecture_Couches
+!theme plain
+skinparam componentStyle rectangle
+
+package "COUCHE PRÉSENTATION" {
+    component [React Étudiant] as ReactEtu
+    component [React Formateur] as ReactForm
+    component [Thymeleaf Admin] as Thymeleaf
+    component [REST API] as REST
+}
+
+package "COUCHE CONTRÔLEUR" {
+    component [Admin Controllers] as AdminCtrl
+    component [REST Controllers] as RESTCtrl
+    component [Auth Controller] as AuthCtrl
+    component [Security Filter] as Security
+}
+
+package "COUCHE SERVICE" {
+    component [Business Services] as Business
+    component [Email Service] as Email
+    component [Security Service] as SecService
+}
+
+package "COUCHE PERSISTANCE" {
+    component [Repositories] as Repo
+    component [Entities] as Entities
+    component [DTOs] as DTOs
+}
+
+database "Base de Données\nMySQL/H2" as DB
+
+ReactEtu --> REST : HTTP/HTTPS\nJWT Token
+ReactForm --> REST : HTTP/HTTPS\nJWT Token
+Thymeleaf --> AdminCtrl : HTTP/HTTPS\nSession
+REST --> RESTCtrl : HTTP/HTTPS\nJWT Token
+
+AdminCtrl --> Business
+RESTCtrl --> Business
+AuthCtrl --> SecService
+Security --> SecService
+
+Business --> Email
+Business --> Repo
+SecService --> Repo
+
+Repo --> Entities
+Repo --> DB
+Entities --> DTOs
+DTOs --> REST
+
+@enduml
+
+@startuml Architecture_Deploiement
+!theme plain
+skinparam nodeStyle rectangle
+
+node "SERVEUR WEB" {
+    component "Application Spring Boot" as App {
+        portin "8080" as Port8080
+    }
+    component "Fichiers Statiques" as Static {
+        folder "/react/etudiant"
+        folder "/react/formateur"
+        folder "/static"
+    }
+}
+
+node "SERVEUR BASE DE DONNÉES" {
+    database "MySQL 8.0" as MySQL {
+        port "3306"
+    }
+}
+
+node "SERVEUR EMAIL" {
+    component "SMTP Server" as SMTP {
+        port "587 (TLS)"
+    }
+}
+
+cloud "CLIENTS" {
+    node "Navigateur" as Browser
+    node "Mobile App\n(Future)" as Mobile
+    node "API Clients\n(Externes)" as API
+}
+
+Port8080 --> MySQL : JDBC
+Port8080 --> SMTP : SMTP
+Browser --> Port8080 : HTTPS
+Mobile --> Port8080 : HTTPS
+API --> Port8080 : HTTPS
+
+@enduml
+
+@startuml Composants_React_Etudiant
+!theme plain
+skinparam componentStyle rectangle
+
+package "App Component" {
+    component [App] {
+        - token: state
+        - user: state
+        - activeTab: state
+        - refreshKey: state
+        + handleLogin()
+        + handleLogout()
+        + handleEnrollSuccess()
+        + handleUnenrollSuccess()
+    }
+}
+
+package "Composants" {
+    component [Login] as LoginComp
+    component [MyCourses] as MyCoursesComp {
+        + loadCourses()
+        + handleUnenroll()
+    }
+    component [AvailableCourses] as AvailableComp {
+        + loadData()
+        + handleEnroll()
+    }
+    component [Grades] as GradesComp {
+        + loadGrades()
+        + loadAverage()
+    }
+    component [Calendar] as CalendarComp {
+        + loadSchedules()
+        + getDaysInMonth()
+        + getSchedulesForDay()
+        + prevMonth()
+        + nextMonth()
+    }
+    component [CourseCard] as CardComp {
+        + handleDownload()
+    }
+}
+
+[App] --> [Login] : if !token
+[App] --> [MyCourses] : if activeTab='courses'
+[App] --> [AvailableCourses] : if activeTab='available'
+[App] --> [Grades] : if activeTab='grades'
+[App] --> [Calendar] : if activeTab='schedule'
+
+[MyCourses] --> [CardComp] : renders
+[AvailableCourses] --> [CardComp] : renders
+[CardComp] --> [CalendarComp] : shows files
+
+note right of [App]
+  refreshKey force re-render
+  of child components
+end note
+
+@enduml
+
+@startuml Composants_React_Formateur
+!theme plain
+skinparam componentStyle rectangle
+
+package "App Component" {
+    component [App] {
+        - token: state
+        - user: state
+        - activeTab: state
+        - refreshKey: state
+        + handleLogin()
+        + handleLogout()
+        + handleCourseCreated()
+    }
+}
+
+package "Composants" {
+    component [Login] as LoginComp
+    component [Courses] as CoursesComp {
+        + loadCourses()
+        + handleCreateCourse()
+    }
+    component [GradeForm] as GradeFormComp {
+        + loadStudents()
+        + handleSaveGrade()
+    }
+    component [CourseFiles] as FilesComp {
+        + loadFiles()
+        + handleUpload()
+        + handleDownload()
+        + handleDelete()
+    }
+    component [ScheduleManagement] as ScheduleComp {
+        + loadSchedules()
+        + handleCreate()
+        + handleUpdate()
+        + handleDelete()
+    }
+}
+
+[App] --> [Login] : if !token
+[App] --> [Courses] : if activeTab='courses'
+[App] --> [GradeForm] : if activeTab='grades'
+[App] --> [FilesComp] : if activeTab='files'
+[App] --> [ScheduleComp] : if activeTab='schedule'
+
+@enduml
+
+@startuml Etat_Schedule
+!theme plain
+state Schedule {
+    [*] --> PENDING : create()
+    
+    PENDING --> APPROVED : approve()
+    PENDING --> REJECTED : reject()
+    
+    APPROVED --> APPROVED : update()
+    REJECTED --> REJECTED : update()
+    
+    APPROVED --> [*] : delete()
+    REJECTED --> [*] : delete()
+}
+
+note right of PENDING
+  Séance créée
+  En attente d'approbation
+end note
+
+note right of APPROVED
+  Séance approuvée
+  Visible pour les étudiants
+end note
+
+note right of REJECTED
+  Séance rejetée
+  Non visible
+end note
+
+@enduml
+
+@startuml Relations_Base_Donnees
+!theme plain
+skinparam linetype ortho
+
+entity "users" {
+    * id : Long <<PK>>
+    --
+    * username : String <<UK>>
+    * password : String
+    * email : String <<UK>>
+    * nom : String
+    * prenom : String
+    * enabled : Boolean
+    * date_creation : Timestamp
+}
+
+entity "students" {
+    * user_id : Long <<PK, FK>>
+    --
+    * matricule : String <<UK>>
+    * date_inscription : Date
+    * group_id : Long <<FK>>
+    * specialty_id : Long <<FK>>
+}
+
+entity "trainers" {
+    * user_id : Long <<PK, FK>>
+    --
+    specialite : String
+}
+
+entity "courses" {
+    * id : Long <<PK>>
+    --
+    * code : String <<UK>>
+    * titre : String
+    description : Text
+    * formateur_id : Long <<FK>>
+    * session_id : Long <<FK>>
+}
+
+entity "enrollments" {
+    * id : Long <<PK>>
+    --
+    * student_id : Long <<FK>>
+    * cours_id : Long <<FK>>
+    * date_inscription : Timestamp
+    --
+    <<UK>> (student_id, cours_id)
+}
+
+entity "grades" {
+    * id : Long <<PK>>
+    --
+    * student_id : Long <<FK>>
+    * cours_id : Long <<FK>>
+    * valeur : Double
+    commentaire : Text
+    * date_attribution : Timestamp
+    --
+    <<UK>> (student_id, cours_id)
+}
+
+entity "schedules" {
+    * id : Long <<PK>>
+    --
+    * cours_id : Long <<FK>>
+    * date : Date
+    * heure_debut : Time
+    * heure_fin : Time
+    salle : String
+    status : String
+}
+
+entity "course_files" {
+    * id : Long <<PK>>
+    --
+    * cours_id : Long <<FK>>
+    * nom_fichier : String
+    type_mime : String
+    taille : Long
+    chemin : String
+    date_upload : Timestamp
+}
+
+entity "sessions" {
+    * id : Long <<PK>>
+    --
+    * nom : String
+    type : String
+    * date_debut : Date
+    * date_fin : Date
+}
+
+entity "groups" {
+    * id : Long <<PK>>
+    --
+    * nom : String
+    description : String
+}
+
+entity "specialties" {
+    * id : Long <<PK>>
+    --
+    * nom : String
+    description : String
+}
+
+entity "roles" {
+    * id : Long <<PK>>
+    --
+    * name : String <<UK>>
+}
+
+entity "user_roles" {
+    * user_id : Long <<FK>>
+    * role_id : Long <<FK>>
+    --
+    <<PK>> (user_id, role_id)
+}
+
+users ||--|| students : "1:1"
+users ||--|| trainers : "1:1"
+users }o--o{ roles : "N:M via user_roles"
+
+students ||--o{ enrollments : "1:N"
+students ||--o{ grades : "1:N"
+students }o--|| groups : "N:1"
+students }o--|| specialties : "N:1"
+
+trainers ||--o{ courses : "1:N"
+
+courses }o--|| sessions : "N:1"
+courses ||--o{ enrollments : "1:N"
+courses ||--o{ grades : "1:N"
+courses ||--o{ schedules : "1:N"
+courses ||--o{ course_files : "1:N"
+
+@enduml
+
+@startuml Flux_Calendrier_Etudiant
+!theme plain
+actor Étudiant
+participant "React Calendar\nComponent" as Calendar
+participant "apiService" as API
+participant "ScheduleRestController" as Controller
+participant "ScheduleService" as Service
+participant "ScheduleRepository" as Repo
+database "Database" as DB
+
+Étudiant -> Calendar : 1. Accès onglet\n"Emploi du Temps"
+activate Calendar
+
+Calendar -> Calendar : 2. useEffect()\nChargement initial
+
+Calendar -> API : 3. getAllSchedules(studentId)
+activate API
+
+API -> Controller : 4. GET /api/schedules/student/{id}/all
+activate Controller
+
+Controller -> Service : 5. getAllStudentSchedules(studentId)
+activate Service
+
+Service -> Repo : 6. findAllStudentSchedules(studentId)\nJOIN FETCH student, cours
+activate Repo
+
+Repo -> DB : 7. SELECT schedules\nJOIN students\nJOIN courses
+activate DB
+DB --> Repo : 8. List<Schedule>
+deactivate DB
+
+Repo --> Service : 9. List<Schedule>\n(with relations loaded)
+deactivate Repo
+
+Service --> Controller : 10. List<Schedule>
+deactivate Service
+
+Controller --> API : 11. JSON Array
+deactivate Controller
+
+API --> Calendar : 12. setSchedules(data)
+deactivate API
+
+Calendar -> Calendar : 13. Rendu calendrier\n- Calcul jours mois\n- Filtrage par date\n- Affichage cellules
+
+Calendar --> Étudiant : 14. Calendrier affiché\navec séances
+deactivate Calendar
+
+@enduml
+
+@startuml Synchronisation_UI_React
+!theme plain
+skinparam componentStyle rectangle
+
+component "App Component" as App {
+    state "refreshKey: 0" as State0
+    state "refreshKey: 1" as State1
+    state "refreshKey: 2" as State2
+}
+
+component "MyCourses\nComponent" as MyCourses
+component "AvailableCourses\nComponent" as Available
+component "Calendar\nComponent" as Calendar
+
+App --> MyCourses : props: refreshKey
+App --> Available : props: refreshKey
+App --> Calendar : props: refreshKey
+
+note right of App
+  handleEnrollSuccess()
+  → refreshKey++
+  
+  handleUnenrollSuccess()
+  → refreshKey++
+end note
+
+MyCourses ..> MyCourses : useEffect([refreshKey])\n→ loadCourses()
+
+Available ..> Available : useEffect([refreshKey])\n→ loadData()
+
+Calendar ..> Calendar : useEffect([refreshKey])\n→ loadSchedules()
+
+note bottom of MyCourses
+  Recharge automatiquement
+  quand refreshKey change
+end note
+
+note bottom of Available
+  Recharge automatiquement
+  quand refreshKey change
+end note
+
+@enduml
+
+@startuml Flux_Attribution_Note
+!theme plain
+actor Formateur
+participant "React GradeForm" as Form
+participant "EnrollmentRestController" as EnrollCtrl
+participant "GradeRestController" as GradeCtrl
+participant "EnrollmentService" as EnrollService
+participant "GradeService" as GradeService
+database "Database" as DB
+
+Formateur -> Form : 1. Select course
+activate Form
+
+Form -> EnrollCtrl : 2. GET /api/inscriptions/course/{id}
+activate EnrollCtrl
+
+EnrollCtrl -> EnrollService : 3. findByCourse(courseId)
+activate EnrollService
+
+EnrollService -> DB : 4. SELECT enrollments\nJOIN FETCH student, cours
+activate DB
+DB --> EnrollService : 5. List<Enrollment>
+deactivate DB
+
+EnrollService --> EnrollCtrl : 6. List<EnrollmentDto>
+deactivate EnrollService
+
+EnrollCtrl --> Form : 7. Students list
+deactivate EnrollCtrl
+
+Form --> Formateur : 8. Display students\nin dropdown
+deactivate Form
+
+Formateur -> Form : 9. Fill form\n(valeur, commentaire)
+activate Form
+
+Form -> GradeCtrl : 10. POST /api/grades/create
+activate GradeCtrl
+
+GradeCtrl -> GradeService : 11. saveOrUpdate\n(studentId, coursId, valeur, commentaire)
+activate GradeService
+
+GradeService -> DB : 12. Check/Create grade\nJOIN FETCH student, cours
+activate DB
+DB --> GradeService : 13. Grade entity
+deactivate DB
+
+GradeService -> DB : 14. Save/Update
+activate DB
+DB --> GradeService : 15. Grade saved
+deactivate DB
+
+GradeService --> GradeCtrl : 16. GradeDto
+deactivate GradeService
+
+GradeCtrl --> Form : 17. Success
+deactivate GradeCtrl
+
+Form -> Form : 18. Refresh grades list
+Form --> Formateur : 19. Updated list
+deactivate Form
+
+@enduml
+
+@startuml Architecture_Complete
+!theme plain
+skinparam linetype ortho
+skinparam componentStyle rectangle
+
+package "CLIENT" {
+    component "Navigateur" as Browser
+    component "React App\n(Étudiant)" as ReactEtu
+    component "React App\n(Formateur)" as ReactForm
+    component "Thymeleaf\n(Admin)" as Thymeleaf
+}
+
+package "SERVEUR SPRING BOOT" {
+    package "COUCHE PRÉSENTATION" {
+        component "Admin Controllers" as AdminCtrl
+        component "REST Controllers" as RESTCtrl
+        component "Auth Controller" as AuthCtrl
+        component "JWT Filter" as JWTFilter
+    }
+    
+    package "COUCHE SERVICE" {
+        component "Business Services" as Business
+        component "Email Service" as Email
+        component "Security Service" as Security
+    }
+    
+    package "COUCHE PERSISTANCE" {
+        component "Repositories\n(JPA)" as Repo
+        component "Entities\n(JPA)" as Entities
+        component "DTOs" as DTOs
+    }
+}
+
+database "MySQL/H2" as DB
+cloud "SMTP Server" as SMTP
+
+Browser --> Thymeleaf : HTTP/HTTPS\nSession
+ReactEtu --> RESTCtrl : HTTP/HTTPS\nJWT Bearer
+ReactForm --> RESTCtrl : HTTP/HTTPS\nJWT Bearer
+
+Thymeleaf --> AdminCtrl
+RESTCtrl --> JWTFilter
+JWTFilter --> AuthCtrl
+
+AdminCtrl --> Business
+RESTCtrl --> Business
+AuthCtrl --> Security
+
+Business --> Email
+Business --> Repo
+Security --> Repo
+
+Repo --> Entities
+Repo --> DB
+Entities --> DTOs
+Email --> SMTP
+
+DTOs --> RESTCtrl
+Business --> AdminCtrl
+
+@enduml
+
